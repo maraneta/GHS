@@ -1,120 +1,23 @@
 from hazard_calculator.models import *
+from hazard_calculator.utils import *
+#acute_toxicity_list, hazard_list, path_to_labels, hazard_re, ld50_re, eh_re, flammable_re, tost_re, sci_re, edi_re, car_re
 
 import xlrd  # @UnresolvedImport
 import re
 
-acute_toxicity_list = [('acute_hazard_oral', 2000),
-                       ('acute_hazard_dermal', 2000),
-                       ('acute_hazard_gases', 20000),
-                       ('acute_hazard_vapors', 20.0),
-                       ('acute_hazard_dusts_mists', 5.0)]
-
-
-hazard_list = ['acute_hazard_oral',
-               'acute_hazard_dermal',
-               'acute_hazard_gases',
-               'acute_hazard_vapors',
-               'acute_hazard_dusts_mists',               
-               'skin_corrosion_hazard', 
-               'eye_damage_hazard', 
-               'germ_cell_mutagenicity_hazard', 
-               'carcinogenicty_hazard', 
-               'reproductive_hazard',
-               'tost_single_hazard',
-               'tost_repeat_hazard',
-               'respiratory_hazard',
-               'skin_sensitization_hazard']
-
-
-
-
-
-
-
-path_to_labels = '/home/matta/label.xls'
-
-#use regular expressions to match tokens with expected hazards
-
-hazard_re = re.compile('([^(,\n]*(?:(?:\([^)]*\))*[^,(\n]*)*)[,\n]?')
-
-
-"""
-LD50 RE: covers ATI, ATO, and ATD; returns category and ld50
-examples: ATI 5(300), ATO 3(300), ATI 4(3350 ppm), 
-
-will match '#anything ATI #anything (digit) #anything ( #anything digits #anything )
-"""
-
-ld50_re = re.compile('AT([IOD])[^\d]*(\d)[^(\d]*\([^\d]*([\d]+)[^)]*')
-
-
-        
-"""        
-EH RE: covers EH A and EH C; returns chronic/acute and category
-
-there must be ONE SPACE between 'EH' and either 'A' or 'C' and no space between A/C and the category
-"""
-
-eh_re = re.compile('EH ([AC])(\d)')
-
-
-
-"""
-flammable_re: covers FL, FS, and FG
-
-will find the first digit after either fl, fg, or fs
-will not match if it does not contain fl fg or fs, or if there are no digits afterward
-"""
-flammable_re = re.compile('F([LGS])[^\d]*(\d)')
-
-
-"""
-tost_re: covers STO - SE and STO - RE
-
-will find the first digit after SE or SR
-will match '#ANYTHING STO #ANYTHING - #ANYTHING (S or R) E #ANYTHING digit
-
-"""
-
-tost_re = re.compile('STO[^-]-[^SR]([SR])E[^\d]*(\d)')
-
-"""
-These are the re's for SCI, EDI, and CAR
-These are simpler to parse since each re covers one hazard, only need to find the category
-"""
-
-sci_re = re.compile('SCI[^\d]*(\d)')
-edi_re = re.compile('EDI[^\d]*(\d)')
-car_re = re.compile('CAR[^\d]*(\d)')
-
-
-#this file defines the main function of this application
-#it takes the path to the labels file, calculates the hazards, execute the callback function if it is defined,
-#and return a dictionary of calculated hazards
-
-def calculate_hazards(path_to_labels, callback_function = None):
-    
-    parsed_data = parse_hazards(path_to_labels)
-    
-    if callback_function != None:
-        callback_function(parsed_data)
-
-
-
-"""
-CREATE SUBHAZARD DICT
-
-Given the consolidated leaf weights of a flavor, create a dictionary which contains the total hazard accumulation
-for each subhazard.
-
-A 'subhazard' is a hazard + category combination; eg. 'skin_corrosion_hazard_1A'.
-
-Input: A list of leafweight objects, corresponding to ingredients and weights for a single flavor
-Output: A dictionary which contains the total 'accumulation' for each subhazard
-
-"""
 
 def create_subhazard_dict(leafweight_list):
+
+    """
+    Given the consolidated leaf weights of a flavor (in the form of FormulaLineItem objects), 
+    create a dictionary which contains the total hazard accumulation for each subhazard.
+    
+    A 'subhazard' is a hazard + category combination; eg. 'skin_corrosion_hazard_1A'.
+    
+    Input: A list of leafweight objects, corresponding to ingredients and weights for a single flavor
+    Output: A dictionary which contains the total 'accumulation' for each subhazard
+    
+    """
     
     #The KEYS in this dictionary are in the format 'subhazard_category' (eg. 'skin_corrosion_hazard_1A')
     #The VALUES are the accumulation of ingredient weights that correspond to each hazard
@@ -194,19 +97,28 @@ def create_subhazard_dict(leafweight_list):
         hazard_dict[acute_hazard] = 0
             
     #for each base ingredient in the flavor, find any hazards it has and add its weight to each of those
-    for ingredient, weight in self.consolidated_leafs.iteritems():
-       
+    for lw in leafweight_list:
+        
+#         try:
+        ingredient = GHSIngredient.objects.get(cas = lw.cas)
+#         except:
+#             print lw.cas
+            
+        weight = lw.weight
+        
         hazard_dict['total_weight'] += weight
         
-        for hazard in hazard_list:
+        #for each NON-acute hazard that the ingredient has, add the ingredient's weight to the correct subhazard key 
+        for hazard in hazard_list[5:]:
             ingredient_hazard_category = getattr(ingredient, hazard)
             if ingredient_hazard_category != '':
+                print ingredient.cas, ingredient.skin_corrosion_hazard
                 hazard_dict[hazard + '_' + ingredient_hazard_category] += weight
         
         #here I add weight/ld50 for each of the acute hazards
         for acute_hazard, max_ld50 in acute_toxicity_list:
-            ld50_property = acute_hazard.split('acute_hazard_')[1] + '_ld50'
-            unknown_weight_key = acute_hazard.split('acute_hazard_')[1] + '_unknown'
+            ld50_property = acute_hazard.split('acute_hazard_')[1] + '_ld50' #ex. oral_ld50
+            unknown_weight_key = acute_hazard.split('acute_hazard_')[1] + '_unknown' #ex. oral_unknown
             
             ingredient_ld50 = getattr(ingredient, ld50_property)
             
@@ -218,40 +130,46 @@ def create_subhazard_dict(leafweight_list):
             elif ingredient_ld50 < max_ld50:
                 hazard_dict[acute_hazard] += weight/getattr(ingredient, ld50_property)
             
-                
+
     return hazard_dict
 
 
 
-"""
-CALCULATE_FLAVOR_HAZARDS
-
-input: dictionary containing a list of flavors and their formulas
-output: dictionary containing list of flavors and their hazards
-
-"""
-
-test_dictionary = {
-                    'test flavor': {''}
-                   
-                   }
-
-# def calculate_flavor_hazards():
+# """
+# CALCULATE_FLAVOR_HAZARDS
+# 
+# input: dictionary containing a list of flavors and their formulas
+# output: dictionary containing list of flavors and their hazards
+# 
+# """
+# 
+# test_dictionary = {
+#                     'test flavor': {''}
+#                    
+#                    }
+# 
+# # def calculate_flavor_hazards():
     
     
 
 
-"""
-SAVE_INGREDIENT_HAZARDS
-
-uses the parse_hazards function and saves the resulting data into the GHSIngredient model
-"""
 
 def save_ingredient_hazards():
+    
+    """
+    This function uses the parse_hazards function and
+    saves the resulting data into the GHSIngredient model.
+    """    
+    
     ingredient_hazard_dict = parse_hazards(path_to_labels)
     
     for cas in ingredient_hazard_dict:
-        if ingredient_hazard_dict[cas]: #if the hazard dictionary for the corresponding cas number is NOT empty:
+        
+        if cas == '00-00-00':
+            g = GHSIngredient(cas=cas)
+
+        
+        elif ingredient_hazard_dict[cas]: #if the hazard dictionary for the corresponding cas number is NOT empty:
             g = GHSIngredient()
             g.cas = cas
             
@@ -260,30 +178,16 @@ def save_ingredient_hazards():
             for hazard in ingredient_hazards:
                 setattr(g, hazard, ingredient_hazards[hazard])
                 
-            g.save()
+        g.save()
                               
-
-
-
-
-        
-"""
-PARSE_HAZARDS
-
-input: labels.xls
-result: dictionary with cas numbers as keys, hazard info as values
-"""
-
 
 def parse_hazards(path_to_labels):
     
-    
-    labels = xlrd.open_workbook(path_to_labels)
-    sheet = labels.sheets()[0]
-    
-    complete_hazard_dict = {}
-    
     """
+    Input: labels.xls
+    Output: dictionary where keys are cas numbers and values are 
+            hazard dictionaries for that ingredient
+            
     ex: complete_hazard_dict = { 8851: 
                                     {
                                         'acute_aquatic_toxicity_hazard': 1
@@ -291,8 +195,16 @@ def parse_hazards(path_to_labels):
                                         'oral_ld50': 100
                                     },
                                 ...
-                               }
+                               }            
+            
     """
+    
+    
+    labels = xlrd.open_workbook(path_to_labels)
+    sheet = labels.sheets()[0]
+    
+    complete_hazard_dict = {}
+    
     for row in range(sheet.nrows):
         
         cas_number = sheet.cell(row, 0).value
@@ -310,7 +222,10 @@ def parse_hazards(path_to_labels):
             for hazard, value in parse_token(token): #a single token may represent multiple fields
                 ingredient_hazards[hazard] = value        #namely, ld50 hazards correspond to ld50 field and hazard field
             
-            
+    
+    #create a placeholder ingredient for ingredients with no cas number
+    complete_hazard_dict['00-00-00'] = {}
+          
     return complete_hazard_dict
           
 
@@ -352,7 +267,7 @@ def parse_token(token):
     input: a token
     output: a list of (hazard, value) tuples 
     
-    the output will most likely be a single tuple
+    the output will most likely be a single tuple.
     instances where there will be multiple tuples:
         - the token corresponds to an ld50 hazard
         - for some reason there are multiple hazards in the same token
@@ -368,7 +283,6 @@ def parse_token(token):
     
     It can be hard to understand and uses a confusing data structure...
     
-
     
     """
     
