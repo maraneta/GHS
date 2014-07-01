@@ -1,5 +1,11 @@
 from hazard_calculator.models import *
 from hazard_calculator.utils import *
+
+#from hazard_calculator import utils
+#use utils.blah
+
+#from hazard_calculator import models as hazard_models etc
+
 #acute_toxicity_list, hazard_list, path_to_labels, hazard_re, ld50_re, eh_re, flammable_re, tost_re, sci_re, edi_re, car_re
 
 import xlrd  # @UnresolvedImport

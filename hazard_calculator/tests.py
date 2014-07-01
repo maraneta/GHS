@@ -55,7 +55,7 @@ class GHSRegularExpressionTest(TestCase):
         pass
     
     def test_ld50_re(self):
-        ld50_re = re.compile('AT([IOD])[^\d]*(\d)[^(\d]*\([^\d]*([\d]+)[^)]*')
+        #ld50_re = re.compile('AT([IOD])[^\d]*(\d)[^(\d]*\([^\d]*([\d]+)[^)]*')
         
         teststring1 = 'ATD 4(1100),ATI 2(1,v),ATO 3(100),CAR 2,EDI 2A,FL 4,SCI 2,STO-SE 3-RI'
         
