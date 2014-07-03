@@ -12,7 +12,7 @@ import xlrd  # @UnresolvedImport
 import re
 
 
-def create_subhazard_dict(leafweight_list):
+def create_subhazard_dict(formula_list):
 
     """
     Given the consolidated leaf weights of a flavor (in the form of FormulaLineItem objects), 
@@ -103,14 +103,14 @@ def create_subhazard_dict(leafweight_list):
         hazard_dict[acute_hazard] = 0
             
     #for each base ingredient in the flavor, find any hazards it has and add its weight to each of those
-    for lw in leafweight_list:
+    for fli in formula_list:
         
 #         try:
-        ingredient = GHSIngredient.objects.get(cas = lw.cas)
+        ingredient = GHSIngredient.objects.get(cas = fli.cas)
 #         except:
-#             print lw.cas
+#             print fli.cas
             
-        weight = lw.weight
+        weight = fli.weight
         
         hazard_dict['total_weight'] += weight
         
@@ -224,10 +224,21 @@ def parse_hazards(path_to_labels):
         
         contents = sheet.cell(row, 3).value
         
-        for token in hazard_re.findall(contents):
-            for hazard, value in parse_token(token): #a single token may represent multiple fields
-                ingredient_hazards[hazard] = value        #namely, ld50 hazards correspond to ld50 field and hazard field
-            
+        #print contents
+        
+        try:
+            for hazard, value in parse_token(contents):
+                ingredient_hazards[hazard] = value
+        except DuplicateHazardError as e:
+            print "The ingredient with cas number %s has the following duplicate hazards: \n" % cas_number
+            for hazard in e.duplicate_hazards:
+                print hazard
+            print "Please change the input document and ensure those hazards are not repeated."
+        
+#         for token in hazard_re.findall(contents):
+#             for hazard, value in parse_token(token): #a single token may represent multiple fields
+#                 ingredient_hazards[hazard] = value        #namely, ld50 hazards correspond to ld50 field and hazard field
+#             
     
     #create a placeholder ingredient for ingredients with no cas number
     complete_hazard_dict['00-00-00'] = {}
@@ -267,10 +278,19 @@ re_dict = {
                 
           }
 
+
+class DuplicateHazardError(Exception):
+    def __init__(self, duplicate_hazards):
+        self.duplicate_hazards = duplicate_hazards
+    def __str__(self):
+        return repr(self.duplicate_hazards)
+         
+
+
 def parse_token(token):
     
     """
-    input: a token
+    input: a token (here, a token represents the content in a cell)
     output: a list of (hazard, value) tuples 
     
     the output will most likely be a single tuple.
@@ -285,37 +305,98 @@ def parse_token(token):
 
     """
     
-    First option: This is the 'less redundant' implementation, which uses the dictionary 're_dict' above.
+    First option: Less code, harder to understand
     
-    It can be hard to understand and uses a confusing data structure...
+    My attempt to explain what is going on here:
+    
+    1. The outer for loop goes through all the keys in the re_dict, which are regular expressions.
+    2. Each regular expression matches what it can in the content string.
+    3. Each 're.findall' will return a list of tuples, where each tuple corresponds to a hazard.
+    4. The tuples that are returned will be different sizes depending on the regular expression.
+        -the ld50_re will return tuples of length 3 (contains hazard, category, and ld50)
+        -the tost, eh, and flammable re's will return tuples of length 2 (hazard, category)
+        -the sci, edi, and car re's do not return tuples, just a list of strings
+            >in this case, I just check to see if the first item in the list is a string and not a tuple.
+    5. Once I determine the size of the tuples, I use the captured information to add the correct data
+        to the hazard_list (by using re_dict).
+        
+    EXAMPLE: 
+        -we are iterating through the re's and reach the ld50_re 
+        -re.findall(token) returns [('O', '3', '100')]
+        -since the tuple is of length 3, we know it is an ld50 hazard
+        -we set the variables in the returned tuple (for hazard, category, ld50 in re_results):
+            hazard = '0'
+            category = '3'
+            ld50 = 100
+        -using re_dict[re], we find the letter that matches the hazard 'O', and 
+            obtain the corresponding hazards to return: ('acute_hazard_oral', 'oral_ld50')
+        -we append the two hazards to the hazard_list as (hazard, value) tuples:
+            -('acute_hazard_oral', '3')
+            -('oral_ld50', 100)
     
     
     """
     
+    
+    '''
+    write a class for each set of re's?
+    
+    
+    
+    change the structure of re_dict so I don't have to determine the length of the returned tuples
+    losing information; dont need if statements
+    just split re_dict into three different groups and iterate over those groups
+    '''
+    
     for re in re_dict:
         if re.search(token):
             re_results = re.findall(token)
+
+        #re_results = re.findall(token)
             
+
             if len(re_results[0]) == 3: #ld50 hazards
-                
+                 
                 for hazard, category, ld50 in re_results:
                     for hazard_letter in re_dict[re]:
                         if hazard == hazard_letter:
                             hazard_list.append((re_dict[re][hazard_letter][0], category))
                             hazard_list.append((re_dict[re][hazard_letter][1], ld50))
-                            
-            elif len(re_results[0]) == 2: #tost, eh, flammable hazards
-                
+                             
+            elif len(re_results[0]) == 2 and not isinstance(re_results[0], basestring): #tost, eh, flammable hazards
+                 
+                print re, re_results[0]
+                 
                 for hazard, category in re_results:
                     for hazard_letter in re_dict[re]:
                         if hazard == hazard_letter:
                             hazard_list.append((re_dict[re][hazard_letter], category))
-                            
-            elif len(re_results[0]) == 1: #sci, edi, car hazards
-                
+                             
+            elif isinstance(re_results[0], basestring): #sci, edi, car hazards
+                 
                 category = re_results[0]
                 
-                hazard_list.append((re_dict[re], category))
+                for category in re_results: #there should only be one unless the same hazard is repeated
+                    hazard_list.append((re_dict[re], category))
+                        
+    '''
+    Here I check if any hazards for one ingredient have been duplicated.  
+    
+    If so, raise an exception which is caught by parse_hazards.  Then add the cas number to a list of
+    invalid rows.
+    '''
+            
+    unique_list = []
+    duplicate_list = []
+    for hazard, value in hazard_list:
+        if hazard in unique_list and hazard not in duplicate_list:
+            duplicate_list.append(hazard)
+        elif hazard not in unique_list:
+            unique_list.append(hazard)
+        
+    if len(duplicate_list) > 0:
+        raise DuplicateHazardError(duplicate_list)
+                                
             
     return hazard_list
             
@@ -393,4 +474,10 @@ def parse_token(token):
         
         
         
+
+    
+        
+        
+
+
 

@@ -1,6 +1,7 @@
 from django.db import models
+from decimal import Decimal
 
-# Create your models here.
+from hazard_calculator.utils import acute_toxicity_list, hazard_list
 
 #Since both Flavor and Ingredient models will have the same hazard fields, they can inherit them from this class
 class HazardFields(models.Model):
@@ -255,7 +256,7 @@ class HazardAccumulator():
         #self.flavor = flavor
         
         #self.subhazard_dict = self.flavor.accumulate_hazards()
-        self.subahzard_dict = subhazard_dict
+        self.subhazard_dict = subhazard_dict
                 
         self.total_weight = self.subhazard_dict['total_weight']
         
@@ -421,7 +422,7 @@ class HazardAccumulator():
         #dermal_ld50 = self.flavor.dermal_ld50
         dermal_ld50 = self.subhazard_dict['dermal_ld50']
         
-        save_ld50(self.flavor, 'dermal_ld50', dermal_ld50)
+        #save_ld50(self.flavor, 'dermal_ld50', dermal_ld50)
         
         if 0 < dermal_ld50 <= 50:
             return '1'
@@ -520,12 +521,12 @@ class HazardAccumulator():
             
             self.subhazard_dict[acute_hazard.split('acute_hazard_')[1] + '_ld50'] = ld50
     
-    def save_ld50s(self):
-        for acute_hazard, max_ld50 in acute_toxicity_list:
-            
-            ld50_property = acute_hazard.split('acute_hazard_')[1] + '_ld50'
-            
-            save_ld50(self.flavor, ld50_property, Decimal(str(self.subhazard_dict[ld50_property])))
+#     def save_ld50s(self):
+#         for acute_hazard, max_ld50 in acute_toxicity_list:
+#             
+#             ld50_property = acute_hazard.split('acute_hazard_')[1] + '_ld50'
+#             
+#             save_ld50(self.flavor, ld50_property, Decimal(str(self.subhazard_dict[ld50_property])))
     
 #     def calculate_and_save_ld50s(self):
 #         for acute_hazard, max_ld50 in acute_toxicity_list:
