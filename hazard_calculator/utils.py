@@ -90,7 +90,7 @@ will match '#ANYTHING STO #ANYTHING - #ANYTHING (S or R) E #ANYTHING digit
 
 """
 
-tost_re = re.compile('STO[^-]*-[^SR]*([SR])E[^\d]*(\d)')
+tost_re = re.compile('STO[^-]*-[^SR]*([SR])E[^\d]*(\d(?:(?:-RI)?(?:-NE)?)?)')
 
 """
 These are the re's for SCI, EDI, and CAR

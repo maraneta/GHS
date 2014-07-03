@@ -118,7 +118,6 @@ def create_subhazard_dict(formula_list):
         for hazard in hazard_list[5:]:
             ingredient_hazard_category = getattr(ingredient, hazard)
             if ingredient_hazard_category != '':
-                print ingredient.cas, ingredient.skin_corrosion_hazard
                 hazard_dict[hazard + '_' + ingredient_hazard_category] += weight
         
         #here I add weight/ld50 for each of the acute hazards
@@ -243,7 +242,7 @@ def parse_hazards(path_to_labels):
     #create a placeholder ingredient for ingredients with no cas number
     complete_hazard_dict['00-00-00'] = {}
           
-    return complete_hazard_dict
+    #return complete_hazard_dict
           
 
    
@@ -285,9 +284,33 @@ class DuplicateHazardError(Exception):
     def __str__(self):
         return repr(self.duplicate_hazards)
          
-
+         
 
 def parse_token(token):
+    
+    '''
+    I use this function to keep track of which hazards appear twice in the same cell.
+    
+    I exploit the fact that default arguments are only evaluated one time - when the function is defined.
+    Therefore, function keeps the state of the lists and appends to the same lists in each successive call.
+    '''
+    def find_duplicate_hazards(hazard_field=None, unique_list=[], duplicate_list=[]):
+        
+        if hazard_field == None:
+            pass
+        
+        elif hazard_field not in unique_list:
+            unique_list.append(hazard_field)
+        
+        elif hazard_field in unique_list and hazard_field not in duplicate_list:
+            duplicate_list.append(hazard_field)
+            
+        return duplicate_list
+    
+    
+    
+    
+    
     
     """
     input: a token (here, a token represents the content in a cell)
@@ -340,44 +363,170 @@ def parse_token(token):
     
     '''
     write a class for each set of re's?
-    
-    
-    
-    change the structure of re_dict so I don't have to determine the length of the returned tuples
-    losing information; dont need if statements
-    just split re_dict into three different groups and iterate over those groups
     '''
     
-    for re in re_dict:
+    
+
+        
+
+            
+    
+    
+
+        
+    
+    
+    
+#     for re in re_dict:
+#         if re.search(token):
+#             re_results = re.findall(token)
+# 
+#     
+#             if re == ld50_re:
+    
+    
+    for re in [ld50_re]:
         if re.search(token):
             re_results = re.findall(token)
-
-        #re_results = re.findall(token)
+             
+            for hazard, category, ld50 in re_results:
+                for hazard_letter in re_dict[re]:
+                    if hazard == hazard_letter:
+                        
+                        
+                        '''
+                        Added a bunch of extra lines trying to name variables that might
+                        not be clear... Should I do this for all of them?  Or not do it at all?
+                        '''
+                        
+                        #hazard field is the actual field name of the hazard 
+                        #eg. 'acute_hazard_oral', 'acute_hazard_dermal'
+                        hazard_field = re_dict[re][hazard_letter][0]
+                        
+                        #ld50 field is the ld50 field name; eg. 'oral_ld50'
+                        ld50_field = re_dict[re][hazard_letter][1]
+                        
+                        hazard_list.append((hazard_field, category))
+                        hazard_list.append((ld50_field, ld50))            
+                        
+                        find_duplicate_hazards(hazard_field)
+        
+        
+        #elif re == tost_re:
+        
+    for re in [tost_re]:
+        if re.search(token):
+            re_results = re.findall(token)
             
+            """
+            The Target Organ Systemic Toxicity (TOST) hazards contain a special case that has to be 
+            treated differently.  The single exposure hazard can have two different options when it is
+            category 3; 3-RI and 3-NE.  The difference here is that one chemical can be either 3-RI,
+            3-NE, or BOTH.  If it is both, both STO-SE 3-NE and STO-SE 3-RI will appear in the document.
+            
+            When an ingredient is both 3-NE and 3-RI, it conflicts with the duplicate hazard checker 
+            I implemented.  In this case the STO-SE hazard will appear twice, but instead of raising 
+            a duplicate hazard error, I want the STO-SE hazard to be saved with category '3-NE, 3-RI'.            
 
-            if len(re_results[0]) == 3: #ld50 hazards
-                 
-                for hazard, category, ld50 in re_results:
-                    for hazard_letter in re_dict[re]:
-                        if hazard == hazard_letter:
-                            hazard_list.append((re_dict[re][hazard_letter][0], category))
-                            hazard_list.append((re_dict[re][hazard_letter][1], ld50))
-                             
-            elif len(re_results[0]) == 2 and not isinstance(re_results[0], basestring): #tost, eh, flammable hazards
-                 
-                print re, re_results[0]
-                 
-                for hazard, category in re_results:
-                    for hazard_letter in re_dict[re]:
-                        if hazard == hazard_letter:
-                            hazard_list.append((re_dict[re][hazard_letter], category))
-                             
-            elif isinstance(re_results[0], basestring): #sci, edi, car hazards
-                 
-                category = re_results[0]
+            ----------------------------------------------------------------------------------------
+            
+            High-level pseudocode!
+            
+            IF the hazard is 'S' AND the category is ('3' or '3-NE' or '3-RI'), then we need to do 
+            something differently.
+            
+            ELSE, we do the same thing as we do for the rest of the hazards.
+            
+            -----------------------------------------------------------------------------------------
+            
+            Ann example:
+            
+            Let's say we're on the tost_re and re_results yields [('R', '2'), ('S', '3-NE'), ('S', '3-RI')]
+            
+            Proceeding... 
+            -First the loop finds ('R', '2').
+            -Not 'S' or '3 something' so it jumps to the 'else' statement.
+            -('tost_repeat_hazard', '2') is correctly added to the hazard_list
+            -'tost_repeat_hazard' is added to the unique list
+            
+            -The loop then reaches ('S', '3-NE').
+            -The hazard is 'S' and the category is '3-something'.
+            -Now we check to see if there are any duplicates of ('S', '3-NE') in the re_results list;
+                -We check for exact duplicates because if we only check for the same hazard, we would
+                    get a duplicate error when both ('S', '3-NE') and ('S', '3-RI') are in re_results,
+                    and we do NOT want that
+            -There are no duplicates, so we check if both ('S', '3-NE') and ('S', '3-RI') are in 
+                re_results.  If True, then add ('tost_single_hazard', '3-NE, 3-RI') to the hazard_list
+                because it has not already been appended.
+            -Add 'tost_single_hazard' to the unique_list, so if any other instances of 'tost_single_hazard'
+                appear, a duplicate hazard error will be raised.
                 
-                for category in re_results: #there should only be one unless the same hazard is repeated
-                    hazard_list.append((re_dict[re], category))
+            -The loop reaches ('S', '3-RI').
+            -The hazard is 'S' and the category is '3-something'.
+            -Once again, check for exact duplicates.  There are none.
+                -If there were exact duplicates, duplicate_hazard_field would be called for every duplicate
+                    that has category '3-something', which means it would be called at least twice.
+                    By calling duplicate_hazard_field twice with 'tost_single_hazard' as a parameter,
+                    it adds 'tost_single_hazard' to the duplicate_list.
+            -Check if both ('S', '3-NE') and ('S', '3-RI') are in re_results.  They are, but since 
+                ('tost_single_hazard', '3-NE, 3-RI') has already been added to the hazard_list,
+                do nothing.
+    
+            There is probably a more efficient/less complex way to do this =] 
+            
+            """
+
+        
+            for hazard, category in re_results:
+                print hazard, category
+                
+                if hazard == 'S' and category in ['3', '3-NE', '3-RI']: 
+                    hazard_field = re_dict[re][hazard] # = tost_single_hazard
+                    
+                    
+                    #we need this in the case of ['STO-SE 3-RI, STO-SE 3-RI']
+                    if len(re_results) != len(set(re_results)): #if true, there are duplicates
+                        find_duplicate_hazards(hazard_field) #this will be run at least twice
+                        print '1'
+                    
+                    if (('S', '3-RI') and ('S', '3-NE')) in re_results:
+                        if ('tost_single_hazard', '3-NE, 3-RI') not in hazard_list:
+                            hazard_list.append(('tost_single_hazard', '3-NE, 3-RI'))
+                            find_duplicate_hazards(hazard_field) #this can only happen once
+                            
+                    else:
+                        hazard_list.append((hazard_field, category))
+                        find_duplicate_hazards(hazard_field) #this can only happen once
+                        
+                else: #normal case
+                    hazard_list.append((re_dict[re][hazard], category))
+                    
+                    find_duplicate_hazards(re_dict[re][hazard])                            
+
+                    print '2'
+                            
+        #elif re == (eh_re or flammable_re):
+    for re in [eh_re, flammable_re]:
+        if re.search(token):
+            re_results = re.findall(token)            
+             
+            for hazard, category in re_results:
+                for hazard_letter in re_dict[re]:
+                    if hazard == hazard_letter:
+                        hazard_list.append((re_dict[re][hazard_letter], category))
+                        
+                        find_duplicate_hazards(re_dict[re][hazard_letter])
+                         
+        #elif re == (sci_re or edi_re or car_re):
+    
+    for re in [sci_re, edi_re, car_re]:
+        if re.search(token):
+            re_results = re.findall(token)
+             
+            for category in re_results: #there should only be one unless the same hazard is repeated
+                hazard_list.append((re_dict[re], category))
+                
+                find_duplicate_hazards(re_dict[re])
                         
     '''
     Here I check if any hazards for one ingredient have been duplicated.  
@@ -385,6 +534,19 @@ def parse_token(token):
     If so, raise an exception which is caught by parse_hazards.  Then add the cas number to a list of
     invalid rows.
     '''
+    
+    if len(find_duplicate_hazards()) > 0:
+        raise DuplicateHazardError(find_duplicate_hazards())
+     
+    return hazard_list 
+     
+    """        
+    '''
+    Right now, I am adding to the list above and then iterating through the whole list after it's complete.
+    
+    I should change this.  I should have something that contains the 'unique list' and 'duplicate list' 
+    logic and alter these lists as hazard_list is being appended to.
+    '''        
             
     unique_list = []
     duplicate_list = []
@@ -402,81 +564,7 @@ def parse_token(token):
             
     """
     
-    This implementation, while easier to understand, uses many similar if statements and takes a lot
-        more space than the previous implementation.
-
-    if ld50_re.search(token):
-        re_results = ld50_re.findall(token) #
-        for hazard, category, ld50 in re_results: #result will be in the form ('D', '5', '4700')
-
-            if hazard == 'O':
-                hazard_list.append(('acute_hazard_oral', category))
-                hazard_list.append(('oral_ld50', ld50))
-            elif hazard == 'D':
-                hazard_list.append(('acute_hazard_dermal', category))
-                hazard_list.append(('dermal_ld50', ld50))
-            elif hazard == 'I':
-                hazard_list.append(('acute_hazard_inhalation', category))
-                hazard_list.append(('inhalation_ld50', ld50)) #currently no inhalation ld50 in database
-            
-    
-    if eh_re.search(token):
-        re_results = eh_re.findall(token)
-        
-        for hazard, category in re_results:
-            
-            if hazard == 'A':
-                hazard_list.append(('acute_aquatic_toxicity_hazard', category))
-            elif hazard == 'C':
-                hazard_list.append(('chronic_aquatic_toxicity_hazard', category))
-
-    if flammable_re.search(token):
-        re_results = flammable_re.findall(token)
-        
-        for hazard, category in re_results:
-            if hazard == 'L':
-                hazard_list.append(('flammable_liquid_hazard', category))
-            elif hazard == 'G':
-                hazard_list.append(('emit_flammable_hazard', category))
-            elif hazard == 'S':
-                hazard_list.append(('flammable_solid_hazard', category))
-    
-    if tost_re.search(token):
-        re_results = tost_re.findall(token)
-        
-        for hazard,_category in re_results:
-            if hazard == 'R':
-                hazard_list.append(('tost_single_hazard', category))
-            elif hazard == 'S':
-                hazard_list.append(('tost_repeat_hazard', category))
-    
-    if len(sci_re.findall(token)) > 0:
-        category = sci_re.findall(token)[0] #only one
-        
-        hazard_list.append(('skin_corrosion_hazard', category))
-    
-    if len(edi_re.findall(token)) > 0:
-        category = edi_re.findall(token)[0]
-        
-        hazard_list.append(('eye_damage_hazard', category))
-        
-    if len(car_re.findall(token)) > 0:
-        category = car_re.findall(token)[0]
-        
-        hazard_list.append(('carcinogenicty_hazard', category)) 
-        
-    return hazard_list
-
-    """        
-        
-        
-        
-        
-        
-        
-
-    
-        
+  
         
 
 

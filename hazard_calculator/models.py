@@ -58,7 +58,10 @@ class HazardFields(models.Model):
          ('No','No'),
         ('1','1'),
         ('2','2'),
-        ('3','3'),)
+        ('3','3'),
+        ('3-NE','3-NE'),
+        ('3-RI','3-RI'),
+        ('3-NE, 3-RI','3-NE, 3-RI'))
     TOST_REPEAT_EXPOSURE_CHOICES = (
         ('No','No'),
         ('1','1'),
@@ -74,7 +77,8 @@ class HazardFields(models.Model):
         ('No','No'),
         ('1','1'),
         ('2','2'),
-        ('3','3'))          
+        ('3','3'),
+        )          
     CHRONIC_AQUATIC_TOXICITY_CHOICES = (
         ('No','No'),
         ('1','1'),
