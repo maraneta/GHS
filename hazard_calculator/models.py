@@ -273,14 +273,14 @@ class HazardAccumulator():
         skin_1 = self.subhazard_dict['skin_corrosion_hazard_1A'] + self.subhazard_dict['skin_corrosion_hazard_1B'] + self.subhazard_dict['skin_corrosion_hazard_1C']
         skin_2 = self.subhazard_dict['skin_corrosion_hazard_2']
         
-        if skin_1/self.subhazard_dict['total_weight'] * 100 >= 5:
+        if skin_1/self.subhazard_dict['total_weight'] * 100 >= Decimal('5.0'):
             if self.subhazard_dict['skin_corrosion_hazard_1A'] >= 0:
                 return '1A'
             elif self.subhazard_dict['skin_corrosion_hazard_1B'] >= 0:
                 return '1B'
             else:
                 return '1C'
-        elif (10 * skin_1 + skin_2)/self.subhazard_dict['total_weight'] * 100 >= 10:
+        elif (10 * skin_1 + skin_2)/self.subhazard_dict['total_weight'] * 100 >= Decimal('10.0'):
             return '2'
         else:
             return 'No'
@@ -291,11 +291,11 @@ class HazardAccumulator():
         eye_damage_1 = self.subhazard_dict['eye_damage_hazard_1']
         eye_damage_2 = self.subhazard_dict['eye_damage_hazard_2A'] + self.subhazard_dict['eye_damage_hazard_2B']
         
-        if (skin_corrosion_1 + eye_damage_1)/self.subhazard_dict['total_weight'] * 100 >= 3:
+        if (skin_corrosion_1 + eye_damage_1)/self.subhazard_dict['total_weight'] * 100 >= Decimal('3.0'):
             #test = (skin_corrosion_1 + eye_damage_1)/self.subhazard_dict['total_weight'] * 100
             return '1'# % test
         
-        elif (10*(skin_corrosion_1 + eye_damage_1) + eye_damage_2)/self.subhazard_dict['total_weight'] * 100 >= 10:
+        elif (10*(skin_corrosion_1 + eye_damage_1) + eye_damage_2)/self.subhazard_dict['total_weight'] * 100 >= Decimal('10.0'):
             #if all the ingredients are in eye_damage_2, it is in category 2B
             if skin_corrosion_1 + eye_damage_1 + self.subhazard_dict['eye_damage_hazard_2A'] == 0:
                 return '2B'
@@ -349,12 +349,22 @@ class HazardAccumulator():
         
     @property
     def tost_single_hazard(self):
+        
+        tost3_ne = self.subhazard_dict['tost_single_hazard_3-NE, 3-RI'] + self.subhazard_dict['tost_single_hazard_3-NE']
+        tost3_ri = self.subhazard_dict['tost_single_hazard_3-NE, 3-RI'] + self.subhazard_dict['tost_single_hazard_3-RI']
+        
         if self.subhazard_dict['tost_single_hazard_1']/self.subhazard_dict['total_weight'] * 100 >= Decimal('1.0'):
             return '1'
         elif self.subhazard_dict['tost_single_hazard_2']/self.subhazard_dict['total_weight'] * 100 >= Decimal('1.0'):
             return '2'
-        elif self.subhazard_dict['tost_single_hazard_3']/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0'):
-            return '3'
+        #had to change the statement below to account for categories '3-NI' and '3-RE'
+        elif tost3_ne/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0') or tost3_ri/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0'):
+            if tost3_ne/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0') and tost3_ri/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0'):
+                return '3-NE, 3-RI'
+            elif tost3_ne/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0'):
+                return '3-NE'
+            elif tost3_ri/self.subhazard_dict['total_weight'] * 100 >= Decimal('20.0'):
+                return '3-RI'
         else:
             return 'No'
         

@@ -8,8 +8,42 @@ from hazard_calculator.utils import *
 
 #acute_toxicity_list, hazard_list, path_to_labels, hazard_re, ld50_re, eh_re, flammable_re, tost_re, sci_re, edi_re, car_re
 
+import os, sys, errno, logging
 import xlrd  # @UnresolvedImport
 import re
+
+
+"""Setting up logging"""
+
+LOG_PATH = '/var/log/django/'
+try:
+    os.makedirs(LOG_PATH)
+except OSError as e:
+    if e.errno == errno.EEXIST and os.path.isdir(LOG_PATH):
+        pass
+    else:
+        raise
+LOG_FILENAME = '/var/log/django/ghs.log'
+
+LOG_FILE_FORMAT = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
+
+logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO, format=LOG_FILE_FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p')
+logger = logging.getLogger()
+#logger.setFormatter(LOG_FILE_FORMAT)
+
+
+
+#add a log handler that prints to stdout
+
+STDOUT_LOG_FORMAT = logging.Formatter('%(message)s') 
+
+log_handler = logging.StreamHandler(sys.stdout)
+log_handler.setLevel(logging.INFO)
+log_handler.setFormatter(STDOUT_LOG_FORMAT)
+
+logger.addHandler(log_handler)
+
+
 
 
 def create_subhazard_dict(formula_list):
@@ -135,7 +169,7 @@ def create_subhazard_dict(formula_list):
             elif ingredient_ld50 < max_ld50:
                 hazard_dict[acute_hazard] += weight/getattr(ingredient, ld50_property)
             
-
+    #logger.info(hazard_dict)
     return hazard_dict
 
 
@@ -143,50 +177,59 @@ def create_subhazard_dict(formula_list):
 # """
 # CALCULATE_FLAVOR_HAZARDS
 # 
-# input: dictionary containing a list of flavors and their formulas
+# input: 
 # output: dictionary containing list of flavors and their hazards
 # 
 # """
 # 
-# test_dictionary = {
-#                     'test flavor': {''}
-#                    
-#                    }
-# 
-# # def calculate_flavor_hazards():
+
+def calculate_flavor_hazards(formula_list):
+    subhazard_dict = create_subhazard_dict(formula_list)
+          
+    accumulator = HazardAccumulator(subhazard_dict)
+      
+    hazard_dict = accumulator.get_hazard_dict()
+    
+    return hazard_dict
     
     
 
 
 
-def save_ingredient_hazards():
+def save_ingredient_hazards(document_path):
     
     """
     This function uses the parse_hazards function and
     saves the resulting data into the GHSIngredient model.
     """    
     
-    ingredient_hazard_dict = parse_hazards(path_to_labels)
+    ingredient_hazard_dict = parse_hazards(document_path)
     
-    for cas in ingredient_hazard_dict:
-        
-        if cas == '00-00-00':
-            g = GHSIngredient(cas=cas)
-
-        
-        elif ingredient_hazard_dict[cas]: #if the hazard dictionary for the corresponding cas number is NOT empty:
-            g = GHSIngredient()
-            g.cas = cas
+    if ingredient_hazard_dict == None:
+        logger.warning("Ingredients will not be imported.  Fix the errors above.\n")
+    
+    else:
+    
+        for cas in ingredient_hazard_dict:
             
-            ingredient_hazards = ingredient_hazard_dict[cas]
+            if cas == '00-00-00':
+                g = GHSIngredient(cas=cas)
+    
             
-            for hazard in ingredient_hazards:
-                setattr(g, hazard, ingredient_hazards[hazard])
+            elif ingredient_hazard_dict[cas]: #if the hazard dictionary for the corresponding cas number is NOT empty:
+                g = GHSIngredient()
+                g.cas = cas
                 
-        g.save()
+                ingredient_hazards = ingredient_hazard_dict[cas]
+                
+                for hazard in ingredient_hazards:
+                    setattr(g, hazard, ingredient_hazards[hazard])
+                    
+            g.save()
                               
+            logger.info("Ingredients and hazards imported successfully.\n")
 
-def parse_hazards(path_to_labels):
+def parse_hazards(path):
     
     """
     Input: labels.xls
@@ -205,10 +248,14 @@ def parse_hazards(path_to_labels):
     """
     
     
-    labels = xlrd.open_workbook(path_to_labels)
+    labels = xlrd.open_workbook(path)
     sheet = labels.sheets()[0]
     
     complete_hazard_dict = {}
+    
+    multiplephase_list = []
+    duplicatehazard_dict = {}
+    
     
     for row in range(sheet.nrows):
         
@@ -228,21 +275,40 @@ def parse_hazards(path_to_labels):
         try:
             for hazard, value in parse_token(contents):
                 ingredient_hazards[hazard] = value
-        except DuplicateHazardError as e:
-            print "The ingredient with cas number %s has the following duplicate hazards: \n" % cas_number
-            for hazard in e.duplicate_hazards:
-                print hazard
-            print "Please change the input document and ensure those hazards are not repeated."
+                
+        except MultiplePhaseError as e:
+            multiplephase_list.append(cas_number)
         
-#         for token in hazard_re.findall(contents):
-#             for hazard, value in parse_token(token): #a single token may represent multiple fields
-#                 ingredient_hazards[hazard] = value        #namely, ld50 hazards correspond to ld50 field and hazard field
-#             
+        except DuplicateHazardError as e:
+#             print "The ingredient with cas number %s has the following duplicate hazards: " % cas_number
+#             for hazard in e.duplicate_hazards:
+#                 print hazard
+            for hazard in e.duplicate_hazards:
+                if cas_number in duplicatehazard_dict:
+                    duplicatehazard_dict[cas_number].append(hazard)
+                else:
+                    duplicatehazard_dict[cas_number] = [hazard]
+                    
+    print "\n"
+    if multiplephase_list:
+        logger.warning("The following cas numbers contain multiple sets of hazards.  Alter the input document to have only one set of hazards per cas number.\n%s\n" % ', '.join(multiplephase_list)) 
+
+        
+    if duplicatehazard_dict:
+        
+        duplicate_rows = []
+        for cas in duplicatehazard_dict:
+            duplicate_rows.append("%s: %s" % (cas, ', '.join(duplicatehazard_dict[cas])))
+        
+        logger.warning("The following ingredients have duplicate hazards.\n%s\n" % ('\n'.join(duplicate_rows)))
+   
     
-    #create a placeholder ingredient for ingredients with no cas number
-    complete_hazard_dict['00-00-00'] = {}
-          
-    #return complete_hazard_dict
+    """Only return the hazard dictionary if nothing has to be fixed in the document."""
+    if not multiplephase_list and not duplicatehazard_dict:
+        #create a placeholder ingredient for ingredients with no cas number
+        complete_hazard_dict['00-00-00'] = {}
+              
+        return complete_hazard_dict
           
 
    
@@ -283,10 +349,19 @@ class DuplicateHazardError(Exception):
         self.duplicate_hazards = duplicate_hazards
     def __str__(self):
         return repr(self.duplicate_hazards)
-         
+
+class MultiplePhaseError(Exception):
+    def __str__(self):
+        return "Foo"
          
 
 def parse_token(token):
+    
+    if gas_re.search(token) or solution_re.search(token):
+        raise MultiplePhaseError()
+    
+    
+    
     
     '''
     I use this function to keep track of which hazards appear twice in the same cell.
@@ -294,6 +369,7 @@ def parse_token(token):
     I exploit the fact that default arguments are only evaluated one time - when the function is defined.
     Therefore, function keeps the state of the lists and appends to the same lists in each successive call.
     '''
+    
     def find_duplicate_hazards(hazard_field=None, unique_list=[], duplicate_list=[]):
         
         if hazard_field == None:
@@ -478,7 +554,7 @@ def parse_token(token):
 
         
             for hazard, category in re_results:
-                print hazard, category
+                #print hazard, category
                 
                 if hazard == 'S' and category in ['3', '3-NE', '3-RI']: 
                     hazard_field = re_dict[re][hazard] # = tost_single_hazard
@@ -487,7 +563,7 @@ def parse_token(token):
                     #we need this in the case of ['STO-SE 3-RI, STO-SE 3-RI']
                     if len(re_results) != len(set(re_results)): #if true, there are duplicates
                         find_duplicate_hazards(hazard_field) #this will be run at least twice
-                        print '1'
+                        #print '1'
                     
                     if (('S', '3-RI') and ('S', '3-NE')) in re_results:
                         if ('tost_single_hazard', '3-NE, 3-RI') not in hazard_list:
@@ -503,7 +579,7 @@ def parse_token(token):
                     
                     find_duplicate_hazards(re_dict[re][hazard])                            
 
-                    print '2'
+                    #print '2'
                             
         #elif re == (eh_re or flammable_re):
     for re in [eh_re, flammable_re]:
@@ -540,29 +616,7 @@ def parse_token(token):
      
     return hazard_list 
      
-    """        
-    '''
-    Right now, I am adding to the list above and then iterating through the whole list after it's complete.
-    
-    I should change this.  I should have something that contains the 'unique list' and 'duplicate list' 
-    logic and alter these lists as hazard_list is being appended to.
-    '''        
-            
-    unique_list = []
-    duplicate_list = []
-    for hazard, value in hazard_list:
-        if hazard in unique_list and hazard not in duplicate_list:
-            duplicate_list.append(hazard)
-        elif hazard not in unique_list:
-            unique_list.append(hazard)
-        
-    if len(duplicate_list) > 0:
-        raise DuplicateHazardError(duplicate_list)
-                                
-            
-    return hazard_list
-            
-    """
+
     
   
         

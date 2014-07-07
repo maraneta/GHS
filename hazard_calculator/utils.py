@@ -46,6 +46,15 @@ Regular expressions
 """
 
 """
+These regular expressions are used to check if an ingredient in the document has multiple phases,
+    where each phase has its own set of hazards. 
+"""
+
+gas_re = re.compile('gas')
+solution_re = re.compile('solution')
+
+
+"""
 HAZARD RE: this is used to find, split, and capture all hazard tokens in the input document
 """
 
