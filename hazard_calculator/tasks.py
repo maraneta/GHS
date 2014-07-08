@@ -152,7 +152,20 @@ def create_subhazard_dict(formula_list):
         for hazard in hazard_list[5:]:
             ingredient_hazard_category = getattr(ingredient, hazard)
             if ingredient_hazard_category != '':
-                hazard_dict[hazard + '_' + ingredient_hazard_category] += weight
+                
+                
+                """
+                Here I attempt to correct any instances where a parsed category is not a possible
+                category defined in our database.  If we parse category '2' and our database only
+                contains '2A' and '2B', we just add an 'A' to the key (assume it is the most 
+                hazardous option).  This would not work if the most hazardous alternative is not
+                just suffixed with 'A'; in that case you would get another KeyError.
+                """
+                
+                try:
+                    hazard_dict[hazard + '_' + ingredient_hazard_category] += weight
+                except KeyError: 
+                    hazard_dict[hazard + '_' + ingredient_hazard_category + 'A'] += weight
         
         #here I add weight/ld50 for each of the acute hazards
         for acute_hazard, max_ld50 in acute_toxicity_list:
@@ -212,6 +225,7 @@ def save_ingredient_hazards(document_path):
     
         for cas in ingredient_hazard_dict:
             
+            '''This is where the placeholder ingredient is created.'''
             if cas == '00-00-00':
                 g = GHSIngredient(cas=cas)
     

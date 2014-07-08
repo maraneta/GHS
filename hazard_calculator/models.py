@@ -3,11 +3,11 @@ from decimal import Decimal
 
 from hazard_calculator.utils import acute_toxicity_list, hazard_list
 
-#Since both Flavor and Ingredient models will have the same hazard fields, they can inherit them from this class
-class HazardFields(models.Model):
-
-    class Meta:
-        abstract = True
+class GHSIngredient(models.Model):
+        
+    cas = models.CharField(
+        max_length=15,
+        blank=True)
     
     ACUTE_TOXICITY_CHOICES = (
         ('No','No'),
@@ -216,19 +216,7 @@ class HazardFields(models.Model):
     organic_peroxide_hazard = models.CharField("Organic Peroxides", max_length=50,blank=True,
                                choices=ORGANIC_PEROXIDE_CHOICES)
     metal_corrosifve_hazard = models.CharField("Corrosive to Metals", max_length=50,blank=True,
-                               choices=CORROSIVE_TO_METAL_CHOICES)
-
-
-class GHSIngredient(HazardFields):
-
-#     class Meta:
-#         abstract=True
-        
-    cas = models.CharField(
-        max_length=15,
-        blank=True)
-    
-    
+                               choices=CORROSIVE_TO_METAL_CHOICES)    
 
 class FormulaLineItem(models.Model):
     """
