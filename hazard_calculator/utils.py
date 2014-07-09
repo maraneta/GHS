@@ -5,7 +5,9 @@ import re
 """
 Path to hazard document
 """
-path_to_labels = '/home/matta/label.xls'
+#path_to_labels = '/home/matta/label.xls'
+
+path_to_labels = '/home/matta/label_changed.xls'
 
 
 
@@ -44,6 +46,13 @@ hazard_list = ['acute_hazard_oral',
 """
 Regular expressions
 """
+
+"""
+CAS RE: this is used to only pick out rows that have information we want;
+    excludes table headers, footnotes, document title, etc.
+"""
+
+cas_re = re.compile('\d*-\d*-\d*')
 
 """
 These regular expressions are used to check if an ingredient in the document has multiple phases,

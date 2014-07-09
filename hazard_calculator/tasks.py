@@ -6,7 +6,7 @@ from hazard_calculator.utils import *
 
 #from hazard_calculator import models as hazard_models etc
 
-#acute_toxicity_list, hazard_list, path_to_labels, hazard_re, ld50_re, eh_re, flammable_re, tost_re, sci_re, edi_re, car_re
+#acute_toxicity_list, hazard_list, path_to_labels, cas_re, hazard_re, ld50_re, eh_re, flammable_re, tost_re, sci_re, edi_re, car_re
 
 import os, sys, errno, logging
 import xlrd  # @UnresolvedImport
@@ -208,7 +208,6 @@ def calculate_flavor_hazards(formula_list):
     
 
 
-
 def save_ingredient_hazards(document_path):
     
     """
@@ -216,32 +215,104 @@ def save_ingredient_hazards(document_path):
     saves the resulting data into the GHSIngredient model.
     """    
     
+    GHSIngredient.objects.all().delete()
+
+    
     ingredient_hazard_dict = parse_hazards(document_path)
     
     if ingredient_hazard_dict == None:
         logger.warning("Ingredients will not be imported.  Fix the errors above.\n")
     
     else:
+
+        import_raw_data(document_path)
     
         for cas in ingredient_hazard_dict:
             
-            '''This is where the placeholder ingredient is created.'''
-            if cas == '00-00-00':
-                g = GHSIngredient(cas=cas)
-    
+#             #now saving all GHSIngredients, whether or not they have hazards
+#             g = GHSIngredient()
+
+#             g.cas = cas
             
-            elif ingredient_hazard_dict[cas]: #if the hazard dictionary for the corresponding cas number is NOT empty:
-                g = GHSIngredient()
-                g.cas = cas
-                
-                ingredient_hazards = ingredient_hazard_dict[cas]
-                
-                for hazard in ingredient_hazards:
-                    setattr(g, hazard, ingredient_hazards[hazard])
+            #the ingredients have already been saved, just add the hazards to them
+            g = GHSIngredient.objects.get(cas = cas) #this should never fail
+
+            
+            
+            ingredient_hazards = ingredient_hazard_dict[cas]
+            
+            for hazard in ingredient_hazards:
+                setattr(g, hazard, ingredient_hazards[hazard])
+            
+            
+#             '''This is where the placeholder ingredient is created.'''
+#             if cas == '00-00-00':
+#                 g = GHSIngredient(cas=cas)
+#     
+#             
+#             elif ingredient_hazard_dict[cas]: #if the hazard dictionary for the corresponding cas number is NOT empty:
+#                 g = GHSIngredient()
+#                 g.cas = cas
+#                 
+#                 ingredient_hazards = ingredient_hazard_dict[cas]
+#                 
+#                 for hazard in ingredient_hazards:
+#                     setattr(g, hazard, ingredient_hazards[hazard])
                     
             g.save()
                               
-            logger.info("Ingredients and hazards imported successfully.\n")
+        logger.info("Ingredients and hazards imported successfully.\n")
+
+
+def parse_row(row):
+    
+    cas_number = sheet.cell(row, 0).value
+    
+    #ignore rows that do not contain a cas number (table headers, footnote rows, etc)
+    if cas_re.search(cas_number):
+        
+        reach = sheet.cell(row, 1).value
+        name = sheet.cell(row, 2).value
+        ghs_hazard_category = sheet.cell(row, 3).value
+        ghs_change_indicators = sheet.cell(row, 4).value
+        ghs_signal_words = sheet.cell(row, 5).value
+        ghs_codes = sheet.cell(row, 6).value
+        ghs_pictogram_codes = sheet.cell(row, 7).value
+        synonyms = sheet.cell(row, 8).value
+        
+        
+        g = GHSIngredient(cas=cas_number,
+                          reach=reach,
+                          name=name,
+                          ghs_hazard_category=ghs_hazard_category,
+                          ghs_change_indicators=ghs_change_indicators,
+                          ghs_signal_words=ghs_signal_words,
+                          ghs_codes=ghs_codes,
+                          ghs_pictogram_codes=ghs_pictogram_codes,
+                          synonyms=synonyms,)
+        
+    return g
+    
+def import_data(path):
+    
+    labels = xlrd.open_workbook(path)
+    sheet = labels.sheets()[0]    
+
+    ghs_list = []
+    multiplephase_list = []
+    
+    for row in range(sheet.nrows):
+    
+        try:    
+            g = parse_row(row)
+        except MultiplePhaseError as e:
+            multiplephase_list.append(cas_number)
+        
+        
+        
+    #create placeholder ingredient here
+    p = GHSIngredient(cas = '00-00-00')
+    p.save()
 
 def parse_hazards(path):
     
@@ -275,50 +346,34 @@ def parse_hazards(path):
         
         cas_number = sheet.cell(row, 0).value
         
-        #each cas number should only appear once in the document
-        #if not, have to change this code to account for a cas number appearing twice;
-        #    currently, if a cas number appears twice, the hazards from the first occurence will be erased
+        #ignore rows that do not contain a cas number (table headers, footnote rows, etc)
+        if cas_re.search(cas_number):
         
-        complete_hazard_dict[cas_number] = {}    
-        ingredient_hazards = complete_hazard_dict[cas_number]  #easier to understand
-        
-        contents = sheet.cell(row, 3).value
-        
-        #print contents
-        
-        try:
-            for hazard, value in parse_token(contents):
-                ingredient_hazards[hazard] = value
-                
-        except MultiplePhaseError as e:
-            multiplephase_list.append(cas_number)
-        
-        except DuplicateHazardError as e:
-#             print "The ingredient with cas number %s has the following duplicate hazards: " % cas_number
-#             for hazard in e.duplicate_hazards:
-#                 print hazard
-            for hazard in e.duplicate_hazards:
-                if cas_number in duplicatehazard_dict:
-                    duplicatehazard_dict[cas_number].append(hazard)
-                else:
-                    duplicatehazard_dict[cas_number] = [hazard]
+            #each cas number should only appear once in the document
+            #if not, have to change this code to account for a cas number appearing twice;
+            #    currently, if a cas number appears twice, the hazards from the first occurence will be erased
+            
+            complete_hazard_dict[cas_number] = {}    
+            ingredient_hazards = complete_hazard_dict[cas_number]  #easier to understand
+            
+            contents = sheet.cell(row, 3).value
+            
+            #print contents
+            
+            try:
+                for hazard, value in parse_token(contents, cas_number):
+                    ingredient_hazards[hazard] = value
                     
+            except MultiplePhaseError as e:
+                multiplephase_list.append(cas_number)
+        
     print "\n"
     if multiplephase_list:
         logger.warning("The following cas numbers contain multiple sets of hazards.  Alter the input document to have only one set of hazards per cas number.\n%s\n" % ', '.join(multiplephase_list)) 
 
-        
-    if duplicatehazard_dict:
-        
-        duplicate_rows = []
-        for cas in duplicatehazard_dict:
-            duplicate_rows.append("%s: %s" % (cas, ', '.join(duplicatehazard_dict[cas])))
-        
-        logger.warning("The following ingredients have duplicate hazards.\n%s\n" % ('\n'.join(duplicate_rows)))
-   
     
     """Only return the hazard dictionary if nothing has to be fixed in the document."""
-    if not multiplephase_list and not duplicatehazard_dict:
+    if not multiplephase_list:
         #create a placeholder ingredient for ingredients with no cas number
         complete_hazard_dict['00-00-00'] = {}
               
@@ -358,47 +413,65 @@ re_dict = {
           }
 
 
-class DuplicateHazardError(Exception):
-    def __init__(self, duplicate_hazards):
-        self.duplicate_hazards = duplicate_hazards
-    def __str__(self):
-        return repr(self.duplicate_hazards)
 
 class MultiplePhaseError(Exception):
     def __str__(self):
         return "Foo"
          
 
-def parse_token(token):
+def parse_token(token, cas):
     
-    if gas_re.search(token) or solution_re.search(token):
+    #currently, if both gas AND solution are found in the contents, error is raised
+    #so if they delete one it'll work.
+    #however, if in the future someone puts in something other than gas or solution 
+    #the multiple sets won't be detected
+    if gas_re.search(token) and solution_re.search(token): #should i do and?  or OR? 
         raise MultiplePhaseError()
     
     
-    
+   
     
     '''
-    I use this function to keep track of which hazards appear twice in the same cell.
+    We no longer want to raise an error when duplicate hazards are found.
     
-    I exploit the fact that default arguments are only evaluated one time - when the function is defined.
-    Therefore, function keeps the state of the lists and appends to the same lists in each successive call.
+    In the case of duplicate hazards, we just want to take the more severe category and 
+    ignore the lesser category.
+    
+  
     '''
     
-    def find_duplicate_hazards(hazard_field=None, unique_list=[], duplicate_list=[]):
+    def find_duplicate_hazards(hazard_field = None, category = None, hazard_dict = {}, duplicate_dict = {}):
         
+        '''
+        just keep track of hazard_dict, where key = hazard_field, value = [category_list]
+        
+        any key that has a category_list with more than one category represents a duplicate hazard
+        
+        when the function is called, return all duplicate hazards (duplicate_dict)
+
+        '''
+        
+        
+        #if no parameter is passed, just return duplicate list
         if hazard_field == None:
             pass
         
-        elif hazard_field not in unique_list:
-            unique_list.append(hazard_field)
-        
-        elif hazard_field in unique_list and hazard_field not in duplicate_list:
-            duplicate_list.append(hazard_field)
+        else:
+            #if the field is not in the hazard_list, append a tuple
+            if hazard_field not in hazard_dict:
+                hazard_dict[hazard_field] = [category]
             
-        return duplicate_list
-    
-    
-    
+            #if the field IS in the hazard_list, append to the category list
+            else:
+                hazard_dict[hazard_field].append(category)
+                
+        #return duplicate hazards and potential categories
+        for key, value in hazard_dict.iteritems():
+            if len(value) >= 2:
+                duplicate_dict[key] = value
+
+            
+        return duplicate_dict
     
     
     
@@ -450,30 +523,8 @@ def parse_token(token):
     
     """
     
-    
-    '''
-    write a class for each set of re's?
-    '''
-    
-    
 
-        
 
-            
-    
-    
-
-        
-    
-    
-    
-#     for re in re_dict:
-#         if re.search(token):
-#             re_results = re.findall(token)
-# 
-#     
-#             if re == ld50_re:
-    
     
     for re in [ld50_re]:
         if re.search(token):
@@ -499,10 +550,8 @@ def parse_token(token):
                         hazard_list.append((hazard_field, category))
                         hazard_list.append((ld50_field, ld50))            
                         
-                        find_duplicate_hazards(hazard_field)
+                        find_duplicate_hazards(hazard_field, category)
         
-        
-        #elif re == tost_re:
         
     for re in [tost_re]:
         if re.search(token):
@@ -576,26 +625,25 @@ def parse_token(token):
                     
                     #we need this in the case of ['STO-SE 3-RI, STO-SE 3-RI']
                     if len(re_results) != len(set(re_results)): #if true, there are duplicates
-                        find_duplicate_hazards(hazard_field) #this will be run at least twice
+                        find_duplicate_hazards(hazard_field, category) #this will be run at least twice
                         #print '1'
                     
                     if (('S', '3-RI') and ('S', '3-NE')) in re_results:
                         if ('tost_single_hazard', '3-NE, 3-RI') not in hazard_list:
                             hazard_list.append(('tost_single_hazard', '3-NE, 3-RI'))
-                            find_duplicate_hazards(hazard_field) #this can only happen once
+                            find_duplicate_hazards(hazard_field, category) #this can only happen once
                             
                     else:
                         hazard_list.append((hazard_field, category))
-                        find_duplicate_hazards(hazard_field) #this can only happen once
+                        find_duplicate_hazards(hazard_field, category) #this can only happen once
                         
                 else: #normal case
                     hazard_list.append((re_dict[re][hazard], category))
                     
-                    find_duplicate_hazards(re_dict[re][hazard])                            
+                    find_duplicate_hazards(re_dict[re][hazard], category)                            
 
                     #print '2'
                             
-        #elif re == (eh_re or flammable_re):
     for re in [eh_re, flammable_re]:
         if re.search(token):
             re_results = re.findall(token)            
@@ -605,10 +653,8 @@ def parse_token(token):
                     if hazard == hazard_letter:
                         hazard_list.append((re_dict[re][hazard_letter], category))
                         
-                        find_duplicate_hazards(re_dict[re][hazard_letter])
+                        find_duplicate_hazards(re_dict[re][hazard_letter], category)
                          
-        #elif re == (sci_re or edi_re or car_re):
-    
     for re in [sci_re, edi_re, car_re]:
         if re.search(token):
             re_results = re.findall(token)
@@ -616,17 +662,43 @@ def parse_token(token):
             for category in re_results: #there should only be one unless the same hazard is repeated
                 hazard_list.append((re_dict[re], category))
                 
-                find_duplicate_hazards(re_dict[re])
+                find_duplicate_hazards(re_dict[re], category)
                         
     '''
     Here I check if any hazards for one ingredient have been duplicated.  
     
-    If so, raise an exception which is caught by parse_hazards.  Then add the cas number to a list of
-    invalid rows.
+    If so, delete all duplicates, and use the duplicate with the most hazardous category.
     '''
     
-    if len(find_duplicate_hazards()) > 0:
-        raise DuplicateHazardError(find_duplicate_hazards())
+    if len(find_duplicate_hazards()) > 0: #do i even need this if statement
+                
+                
+        for hazard, potential_categories in find_duplicate_hazards().iteritems():
+            
+            logger.info("\nFound duplicate hazards for CAS number %s" % cas) 
+            logger.info("Hazard: %s, Potential Categories: %s" % (hazard, potential_categories))
+            
+            lowest_index = 1000000
+            for category in potential_categories:
+                
+                index = GHSIngredient._meta.get_field(hazard).choices.index((category, category))
+                if index < lowest_index:
+                    lowest_index = index
+                    
+                #find any instances of the hazard in the hazard_list and delete them
+                try:
+                    hazard_list.remove((hazard, category))
+                except:
+                    pass
+            
+            most_hazardous_category = GHSIngredient._meta.get_field(hazard).choices[lowest_index][0]
+            
+            #append the hazard with its most hazardous category 
+            hazard_list.append((hazard, most_hazardous_category))
+            
+            logger.info("Appending most hazardous category: (%s: %s)" % (hazard, most_hazardous_category))
+                
+                
      
     return hazard_list 
      

@@ -5,86 +5,101 @@ from hazard_calculator.utils import acute_toxicity_list, hazard_list
 
 class GHSIngredient(models.Model):
         
+    def __unicode__(self):
+        return u"%s: %s" % (self.cas, self.name)
+        
     cas = models.CharField(
         max_length=15,
         blank=True)
     
+    #raw data fields parsed straight from the document
+    reach = models.CharField(max_length=15, blank=True)
+    name = models.TextField(blank=True)
+    ghs_hazard_category = models.TextField(blank=True)
+    ghs_change_indicators = models.TextField(blank=True)
+    ghs_signal_words = models.TextField(blank=True)
+    ghs_codes = models.TextField(blank=True)
+    ghs_pictogram_codes = models.TextField(blank=True)
+    synonyms = models.TextField(blank=True)
+     
+    
+    
     ACUTE_TOXICITY_CHOICES = (
-        ('No','No'),
         ('1','1'),
         ('2','2'),
         ('3','3'),
         ('4','4'),
-        ('5','5'),)
+        ('5','5'),
+        ('No','No'),)
     SKIN_CORROSION_CHOICES = (
-        ('No','No'),
         ('1A','1A'),
         ('1B','1B'),
         ('1C','1C'),
         ('2','2'),
-        ('3','3'),)
+        ('3','3'),
+        ('No','No'),)
     EYE_DAMAGE_CHOICES = (
-        ('No','No'),
         ('1','1'),
         ('2A','2A'),
-        ('2B','2B'),)
+        ('2B','2B'),
+        ('No','No'),)
     RESPIRATORY_SENSITIZATION_CHOICES = (
-        ('No','No'),
         ('1','1'),
         ('1A','1A'),
-        ('1B','1B'),)
+        ('1B','1B'),
+        ('No','No'),)
     SKIN_SENSITIZATION_CHOICES = (
-        ('No','No'),
         ('1','1'),
         ('1A','1A'),
-        ('1B','1B'),)
+        ('1B','1B'),
+        ('No','No'),)
     GERM_CELL_MUTAGENICITY_CHOICES = (
-        ('No','No'),
-        ('1A','1A'),
-        ('1B','1B'),
-        ('2','2'),)
-    CARCINOGENICTY_CHOICES = (
-        ('No','No'),
-        ('1A','1A'),
-        ('1B','1B'),
-        ('2','2'),)
-    REPRODUCTIVE_CHOICES = (
-        ('No','No'),
         ('1A','1A'),
         ('1B','1B'),
         ('2','2'),
-        ('3','3'))
+        ('No','No'),)
+    CARCINOGENICTY_CHOICES = (
+        ('1A','1A'),
+        ('1B','1B'),
+        ('2','2'),
+        ('No','No'),)
+    REPRODUCTIVE_CHOICES = (
+        ('1A','1A'),
+        ('1B','1B'),
+        ('2','2'),
+        ('3','3'),
+        ('No','No'),)
     TOST_SINGLE_EXPOSURE_CHOICES = (
-         ('No','No'),
         ('1','1'),
         ('2','2'),
         ('3','3'),
         ('3-NE','3-NE'),
         ('3-RI','3-RI'),
-        ('3-NE, 3-RI','3-NE, 3-RI'))
+        ('3-NE, 3-RI','3-NE, 3-RI'),
+        ('No','No'),)
     TOST_REPEAT_EXPOSURE_CHOICES = (
-        ('No','No'),
         ('1','1'),
-        ('2','2'), )
+        ('2','2'), 
+        ('No','No'),)
     ASPIRATION_CHOICES = (
-        ('No','No'),
         ('1','1'),
-        ('2','2'),)
+        ('2','2'),
+        ('No','No'),)
     ASPHYXIANT_CHOICES = (
-        ('No','No'),
-        ('Single Category','Single Category'),)
+        ('Single Category','Single Category'),
+        ('No','No'),)
     ACUTE_AQUATIC_TOXICITY_CHOICES = (
-        ('No','No'),
         ('1','1'),
         ('2','2'),
         ('3','3'),
+        ('No','No'),
         )          
     CHRONIC_AQUATIC_TOXICITY_CHOICES = (
-        ('No','No'),
         ('1','1'),
         ('2','2'),
         ('3','3'),
-        ('4','4'))       
+        ('4','4'),
+        ('No','No'),)       
             
     
     
@@ -156,51 +171,51 @@ class GHSIngredient(models.Model):
                                choices=ASPHYXIANT_CHOICES)
 
     FLAMMABLE_LIQUID_CHOICES = (
-                ('No','No'),
                 ('1','1'),
                 ('2','2'),
                 ('3','3'),
-                ('4','4'),)
+                ('4','4'),
+                ('No','No'),)
     FLAMMABLE_SOLID_CHOICES = (
-                ('No','No'),
                 ('1','1'),
-                ('2','2'),)
+                ('2','2'),
+                ('No','No'),)
     SELF_REACTIVE_CHOICES = (
-                ('No','No'),
                 ('Type A','Type A'),
                 ('Type B','Type B'),
                 ('Type C','Type C'),
                 ('Type D','Type D'),
                 ('Type E','Type E'),
                 ('Type F','Type F'),
-                ('Type G','Type G'),)
+                ('Type G','Type G'),
+                ('No','No'),)
     EMIT_FLAMMABLE_GAS_CHOICES = (
-                ('No','No'),
                 ('1','1'),
                 ('2','2'),
-                ('3','3'),)
+                ('3','3'),
+                ('No','No'),)
     OXIDIZING_LIQUID_CHOICES = (
-                ('No','No'),
                 ('1','1'),
                 ('2','2'),
-                ('3','3'),)
+                ('3','3'),
+                ('No','No'),)
     OXIDIZING_SOLID_CHOICES = (
-                ('No','No'),
                 ('1','1'),
                 ('2','2'),
-                ('3','3'),)
+                ('3','3'),
+                ('No','No'),)
     ORGANIC_PEROXIDE_CHOICES = (
-                ('No','No'),
                 ('Type A','Type A'),
                 ('Type B','Type B'),
                 ('Type C','Type C'),
                 ('Type D','Type D'),
                 ('Type E','Type E'),
                 ('Type F','Type F'),
-                ('Type G','Type G'),)
+                ('Type G','Type G'),
+                ('No','No'),)
     CORROSIVE_TO_METAL_CHOICES = (
-                ('No','No'),
-                ('1','1'),)
+                ('1','1'),
+                ('No','No'),)
     flammable_liquid_hazard = models.CharField("Flammable Liquids", max_length=50,blank=True,
                                choices=FLAMMABLE_LIQUID_CHOICES)
     flamamble_solid_hazard = models.CharField("Flammable Solids", max_length=50,blank=True,
