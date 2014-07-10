@@ -1,5 +1,5 @@
-from hazard_calculator.models import GHSIngredient, HazardAccumulator
-from hazard_calculator.utils import acute_toxicity_list, hazard_list
+from hazard_calculator.models import GHSIngredient, HazardAccumulator, MultiplePhaseError
+from hazard_calculator.utils import acute_toxicity_list, hazard_list, cas_re
 from hazard_calculator.mylogger import logger
 
 #from hazard_calculator import utils
