@@ -119,3 +119,35 @@ sci_re = re.compile('SCI[^\d]*(\d[ABC]?)')
 edi_re = re.compile('EDI[^\d]*(\d[ABC]?)')
 car_re = re.compile('CAR[^\d]*(\d[ABC]?)')
 
+
+
+re_dict = {
+                ld50_re:
+                    {
+                        'O': ('acute_hazard_oral', 'oral_ld50'),
+                        'D': ('acute_hazard_dermal', 'dermal_ld50'),
+                        'I': ('acute_hazard_inhalation', 'inhalation_ld50')
+                     },
+                eh_re: 
+                    {
+                        'A': 'acute_aquatic_toxicity_hazard',
+                        'C': 'chronic_aquatic_toxicity_hazard'
+                     },
+                flammable_re:
+                    {
+                        'L': 'flammable_liquid_hazard',
+                        'G': 'emit_flammable_hazard',
+                        'S': 'flammable_solid_hazard'
+                     },
+                tost_re:
+                    {
+                        'S': 'tost_single_hazard',
+                        'R': 'tost_repeat_hazard'
+                    },
+                sci_re: 'skin_corrosion_hazard',
+                edi_re: 'eye_damage_hazard',
+                car_re: 'carcinogenicty_hazard,'
+                
+                
+          }
+

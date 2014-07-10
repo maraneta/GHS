@@ -4,6 +4,8 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
+sys.path.append('/var/www/django/')
+
 # from LOCAL_SECRETS import DATABASES, SECRET_KEY
 
 DEBUG = True
