@@ -13,6 +13,15 @@ class MultiplePhaseError(Exception):
         return "Cas number: %s, MultiplePhaseError" % self.cas
 
 
+class NoLeafWeightError(Exception):
+
+    def __init__(self, num=None):
+        self.num = num
+            
+
+    def __str__(self):
+        if self.num:
+            return "Flavor %s has no leaf weights; cannot calculate hazards (try recalculate_guts)" % self.num
 
 
 
@@ -556,6 +565,9 @@ class HazardAccumulator():
         self.total_weight = self.subhazard_dict['total_weight']
         
         self.calculate_ld50s()
+        
+        if self.total_weight == 0:
+            raise NoLeafWeightError()
         
     #Each hazard has a function below which describes the requirements/criteria the ingredients must meet in order for 
     #the flavor to be in a specific hazard category.  

@@ -16,16 +16,20 @@ import re
 
 
 
-# """
-# CALCULATE_FLAVOR_HAZARDS
-# 
-# input: 
-# output: dictionary containing list of flavors and their hazards
-# 
-# """
-# 
+
+ 
 
 def calculate_flavor_hazards(formula_list):
+    
+    """
+    The main function of this app; generates hazards given the formula of a flavor.
+    
+    input: a list of formula line item objects
+    output: dictionary containing list of flavors and their hazards
+    
+    """
+    
+    
     subhazard_dict = create_subhazard_dict(formula_list)
           
     accumulator = HazardAccumulator(subhazard_dict)
