@@ -1,7 +1,6 @@
 import re
 
 
-
 """
 Path to hazard document
 """
@@ -23,21 +22,16 @@ acute_toxicity_list = [('acute_hazard_oral', 2000),
                        ('acute_hazard_dusts_mists', 5.0)]
 
 
-hazard_list = ['acute_hazard_oral',
-               'acute_hazard_dermal',
-               'acute_hazard_gases',
-               'acute_hazard_vapors',
-               'acute_hazard_dusts_mists',               
-               'skin_corrosion_hazard', 
+#non-acute hazards
+hazard_list = ['skin_corrosion_hazard', 
                'eye_damage_hazard', 
                'germ_cell_mutagenicity_hazard', 
-               'carcinogenicty_hazard', 
+               'carcinogenicity_hazard', 
                'reproductive_hazard',
                'tost_single_hazard',
                'tost_repeat_hazard',
                'respiratory_hazard',
                'skin_sensitization_hazard']
-
 
 
 
@@ -100,6 +94,7 @@ will not match if it does not contain fl fg or fs, or if there are no digits aft
 flammable_re = re.compile('F([LGS])[^\d]*(\d)')
 
 
+
 """
 tost_re: covers STO - SE and STO - RE
 
@@ -111,13 +106,14 @@ will match '#ANYTHING STO #ANYTHING - #ANYTHING (S or R) E #ANYTHING digit
 tost_re = re.compile('STO[^-]*-[^SR]*([SR])E[^\d]*(\d(?:(?:-RI)?(?:-NE)?)?)')
 
 """
-These are the re's for SCI, EDI, and CAR
+These are the re's for SCI, EDI, CAR, and SS
 These are simpler to parse since each re covers one hazard, only need to find the category
 """
 
 sci_re = re.compile('SCI[^\d]*(\d[ABC]?)')
 edi_re = re.compile('EDI[^\d]*(\d[ABC]?)')
 car_re = re.compile('CAR[^\d]*(\d[ABC]?)')
+ss_re = re.compile('SS[^\d]*(\d[ABC]?)')
 
 
 
@@ -146,7 +142,8 @@ re_dict = {
                     },
                 sci_re: 'skin_corrosion_hazard',
                 edi_re: 'eye_damage_hazard',
-                car_re: 'carcinogenicty_hazard,'
+                car_re: 'carcinogenicity_hazard',
+                ss_re: 'skin_sensitization_hazard',
                 
                 
           }
