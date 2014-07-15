@@ -13,7 +13,7 @@ class GHSIngredient(models.Model):
         
     cas = models.CharField(
         max_length=15,
-        blank=True)
+        unique=True)
     
     #raw data fields parsed straight from the document
     reach = models.CharField(max_length=15, blank=True)
@@ -533,16 +533,14 @@ class HazardAccumulator():
     
 
     def calculate_ld50s(self):
-        for acute_hazard, max_ld50 in acute_toxicity_list:
-            
-            unknown_weight_key = acute_hazard.split('acute_hazard_')[1] + '_unknown'
+        for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
             
             try:
                 ld50 = (self.total_weight - self.subhazard_dict[unknown_weight_key])/(self.subhazard_dict[acute_hazard])
             except: #ZeroDivisionError or InvalidOperation
                 ld50 = None
             
-            self.subhazard_dict[acute_hazard.split('acute_hazard_')[1] + '_ld50'] = ld50
+            self.subhazard_dict[ld50_property] = ld50
     
 #     def save_ld50s(self):
 #         for acute_hazard, max_ld50 in acute_toxicity_list:

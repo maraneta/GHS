@@ -36,32 +36,42 @@ def calculate_flavor_hazards(formula_list):
     
 
 
-"""
-Initial 'Empty' Subhazard Dictionary (contains keys with all weights = 0)
-"""
 
-#The KEYS in this dictionary are in the format 'subhazard_category' (eg. 'skin_corrosion_hazard_1A')
-#The VALUES are the accumulation of ingredient weights that correspond to each hazard
-empty_subhazard_dict = {}
+empty_subhazard_dict = {}   
 
-#include the total weight and unknown weight of the flavor in the dict
-empty_subhazard_dict['total_weight'] = 0
+def get_empty_subhazard_dict():
+    
+    """
+    This functions returns a copy of the empty subhazard dict.  The first time this function
+    executes, it will iterate through the hazard lists, create the dict, and return a copy of it.  
+    Once the dict is cached in memory, the function just returns a copy without having to create it again.
+    """    
+    
+    if empty_subhazard_dict != {}:
+        return copy.copy(empty_subhazard_dict)
+    
+    else:
+        #The KEYS in this dictionary are in the format 'subhazard_category' (eg. 'skin_corrosion_hazard_1A')
+        #The VALUES are the accumulation of ingredient weights that correspond to each hazard
+        #empty_subhazard_dict = {}
+        
+        
+        #initialize all unknown_weights for acute hazards to zero
+        #there will be an unknown weight for each hazard; eg. hazard_dict['oral_unknown'], ...
 
-
-#initialize all unknown_weights for acute hazards to zero
-#there will be an unknown weight for each hazard; eg. hazard_dict['oral_unknown'], ...
-for hazard in list(zip(*acute_toxicity_list)[0]):
-    empty_subhazard_dict[hazard.split('acute_hazard_')[1] + '_unknown'] = 0
-
-#initialize all the values to zero
-for hazard in hazard_list:  
-    for category in GHSIngredient._meta.get_field(hazard).choices:
-        if category[0] != 'No':     #category[0] and category[1] are always the same
-            empty_subhazard_dict[hazard + '_' + category[0]] = 0
-               
-#sigma(weight/ld50), explained above
-for acute_hazard, max_ld50 in acute_toxicity_list:
-    empty_subhazard_dict[acute_hazard] = 0   
+        for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
+            empty_subhazard_dict[unknown_weight_key] = 0
+            empty_subhazard_dict[acute_hazard] = 0 #sigma(weight/ld50)
+        
+        #initialize all the values to zero
+        for hazard in hazard_list:  
+            for category in GHSIngredient._meta.get_field(hazard).choices:
+                if category[0] != 'No':     #category[0] and category[1] are always the same
+                    empty_subhazard_dict[hazard + '_' + category[0]] = 0
+                       
+        return copy.copy(empty_subhazard_dict)
+    
+    
     
 def create_subhazard_dict(formula_list):
 
@@ -84,8 +94,9 @@ def create_subhazard_dict(formula_list):
     
     #create a copy of an empty subhazard dict
     #this allows us to avoid the process of creating the empty dict every time
-    hazard_dict = copy.copy(empty_subhazard_dict)
-                
+    hazard_dict = get_empty_subhazard_dict()
+            
+    hazard_dict['total_weight'] = total_weight
     '''
     CALCULATING ACUTE TOXICITY HAZARDS (NOT THE SAME AS CALCULATING OTHER HAZARDS)
     
@@ -144,16 +155,10 @@ def create_subhazard_dict(formula_list):
     #for each base ingredient in the flavor, find any hazards it has and add its weight to each of those
     for fli in formula_list:
         
-        #print fli.cas
-        
-#         try:
         ingredient = GHSIngredient.objects.get(cas = fli.cas)
-#         except:
-#             print fli.cas
             
         weight = fli.weight
-        
-        hazard_dict['total_weight'] += weight
+
                 
         #for each NON-acute hazard that the ingredient has, add the ingredient's weight to the correct subhazard key 
         for hazard in hazard_list:
@@ -162,24 +167,23 @@ def create_subhazard_dict(formula_list):
             if ingredient_hazard_category != '':
                 add_weight_to_subhazard_dict(hazard_dict, hazard, ingredient_hazard_category, weight)
         
-        unknown_ld50_total_weight = 0
+        
         
         #here I add weight/ld50 for each of the acute hazards
-        for acute_hazard, max_ld50 in acute_toxicity_list:
-            ld50_property = acute_hazard.split('acute_hazard_')[1] + '_ld50' #ex. oral_ld50
-            unknown_weight_key = acute_hazard.split('acute_hazard_')[1] + '_unknown' #ex. oral_unknown
+        for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
+            
+            
             
             ingredient_ld50 = getattr(ingredient, ld50_property)
             
             if ingredient_ld50 == None:
-                unknown_ld50_total_weight += weight
+                #for each ingredient, only add its weight to the unknown key for each acute hazard 
+                # if that ingredients concentration is >10%    
+                if (weight/hazard_dict['total_weight']) * 100 > 10: 
+                    hazard_dict[unknown_weight_key] += weight
             elif ingredient_ld50 < max_ld50:
                 hazard_dict[acute_hazard] += weight/getattr(ingredient, ld50_property)
-        
-        #only add the weight to unknown_weight if its concentration is >10%
-        #here I just assume that the total_weight is 1000 because it would be hard to do this check in the controller
-        if (unknown_ld50_total_weight/1000) * 100 > 10: 
-            hazard_dict[unknown_weight_key] += unknown_ld50_total_weight
+                
         
     #logger.info(hazard_dict)
     return hazard_dict    

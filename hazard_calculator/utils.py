@@ -15,11 +15,11 @@ Hazard information
 """
 
 
-acute_toxicity_list = [('acute_hazard_oral', 2000),
-                       ('acute_hazard_dermal', 2000),
-                       ('acute_hazard_gases', 20000),
-                       ('acute_hazard_vapors', 20.0),
-                       ('acute_hazard_dusts_mists', 5.0)]
+acute_toxicity_list = [('acute_hazard_oral', 'oral_ld50', 'oral_unknown', 2000),
+                       ('acute_hazard_dermal', 'dermal_ld50', 'dermal_unknown', 2000),
+                       ('acute_hazard_gases', 'gases_ld50', 'gases_unknown', 20000),
+                       ('acute_hazard_vapors', 'vapors_ld50', 'vapors_unknown', 20.0),
+                       ('acute_hazard_dusts_mists', 'dusts_mists_ld50', 'dusts_mists_unknown', 5.0)]
 
 
 #non-acute hazards
