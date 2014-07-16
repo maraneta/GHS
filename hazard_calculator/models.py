@@ -76,9 +76,9 @@ class GHSIngredient(models.Model):
         ('1','1'),
         ('2','2'),
         ('3','3'),
-        ('3-NE','3-NE'),
-        ('3-RI','3-RI'),
         ('3-NE, 3-RI','3-NE, 3-RI'),
+        ('3-NE','3-NE'),
+        ('3-RI','3-RI'),        
         ('No','No'),)
     TOST_REPEAT_EXPOSURE_CHOICES = (
         ('1','1'),
@@ -542,50 +542,23 @@ class HazardAccumulator():
             
             self.subhazard_dict[ld50_property] = ld50
     
-#     def save_ld50s(self):
-#         for acute_hazard, max_ld50 in acute_toxicity_list:
-#             
-#             ld50_property = acute_hazard.split('acute_hazard_')[1] + '_ld50'
-#             
-#             save_ld50(self.flavor, ld50_property, Decimal(str(self.subhazard_dict[ld50_property])))
-    
-#     def calculate_and_save_ld50s(self):
-#         for acute_hazard, max_ld50 in acute_toxicity_list:
-#         
-#             try:
-#                 ld50 = 1/(self.subhazard_dict[acute_hazard]/self.total_weight)
-#             except ZeroDivisionError:
-#                 ld50 = max_ld50 + 1
-#             
-#             save_ld50(self.flavor, acute_hazard.split('acute_hazard_')[1] + '_ld50', Decimal(str(ld50)))
-        
     
     def get_hazard_dict(self):
         
         hazard_dict = {}
+        
+        for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
+            
+            hazard_dict[acute_hazard] = getattr(self, acute_hazard)
+            
+            if getattr(self, acute_hazard) != 'No':
+                hazard_dict[ld50_property] = self.subhazard_dict[ld50_property]
         
         for hazard_property in hazard_list:
             
             hazard_dict[hazard_property] = getattr(self, hazard_property)
             
         return hazard_dict
-    '''
-    Old functions that depended on knowing the flavor    
-    
-    def save_hazards(self):
-        hazard_dict = self.get_hazard_dict()
-        
-        for hazard_name, category in hazard_dict.iteritems():
-            setattr(self.flavor, hazard_name, category)
-            
-        self.flavor.save()
-        
-        self.save_ld50s()
-        
-    def recalculate_hazards(self):
-        self.subhazard_dict = self.flavor.accumulate_hazards()
-        self.calculate_ld50s()
-    '''    
         
     def recalculate_hazards(self, formula_list):
         self.subhazard_dict = create_subhazard_dict(formula_list)

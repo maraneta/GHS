@@ -75,12 +75,7 @@ def get_empty_subhazard_dict():
     
 def create_subhazard_dict(formula_list):
 
-#     #use a django aggregate function (Sum) to find the total weight of the formula_list queryset
-#     total_weight = formula_list.aggregate(Sum('weight'))
-   
-   
-    total_weight = sum([fli.weight for fli in formula_list])
-    
+       
     """
     Given the consolidated leaf weights of a flavor (in the form of FormulaLineItem objects), 
     create a dictionary which contains the total hazard accumulation for each subhazard.
@@ -91,6 +86,8 @@ def create_subhazard_dict(formula_list):
     Output: A dictionary which contains the total 'accumulation' for each subhazard
     
     """
+    
+    total_weight = sum([fli.weight for fli in formula_list])
     
     #create a copy of an empty subhazard dict
     #this allows us to avoid the process of creating the empty dict every time
@@ -171,9 +168,6 @@ def create_subhazard_dict(formula_list):
         
         #here I add weight/ld50 for each of the acute hazards
         for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
-            
-            
-            
             ingredient_ld50 = getattr(ingredient, ld50_property)
             
             if ingredient_ld50 == None:
@@ -355,8 +349,6 @@ def parse_ghs_hazard_category_cell(cell_contents, cas_number):
 
     """
     
-    First option: Less code, harder to understand
-    
     My attempt to explain what is going on here:
     
     1. The outer for loop goes through all the keys in the re_dict, which are regular expressions.
@@ -454,7 +446,7 @@ def parse_ghs_hazard_category_cell(cell_contents, cas_number):
             
             -The loop then reaches ('S', '3-NE').
             -The hazard is 'S' and the category is '3-something'.
-            -Now we check to see if there are any duplicates of ('S', '3-NE') in the re_results list;
+            -Now we check to see if there are any exacty duplicates in re_results by checking the length of the set
                 -We check for exact duplicates because if we only check for the same hazard, we would
                     get a duplicate error when both ('S', '3-NE') and ('S', '3-RI') are in re_results,
                     and we do NOT want that
@@ -495,7 +487,7 @@ def parse_ghs_hazard_category_cell(cell_contents, cas_number):
                     if (('S', '3-RI') and ('S', '3-NE')) in re_results:
                         if ('tost_single_hazard', '3-NE, 3-RI') not in hazard_list:
                             hazard_list.append(('tost_single_hazard', '3-NE, 3-RI'))
-                            find_duplicate_hazards(hazard_field, category) #this can only happen once
+                            find_duplicate_hazards(hazard_field, '3-NE, 3-RI') #this can only happen once
                             
                     else:
                         hazard_list.append((hazard_field, category))
