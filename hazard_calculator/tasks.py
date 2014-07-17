@@ -4,8 +4,7 @@ import re, copy
 from django.db.models import Sum
 
 from hazard_calculator.models import GHSIngredient, HazardAccumulator
-from hazard_calculator.utils import acute_toxicity_list, hazard_list, cas_re, \
-  re_dict, ld50_re, eh_re, flammable_re, tost_re, sci_re, edi_re, car_re, ss_re, gas_re, solution_re
+from hazard_calculator.utils import acute_toxicity_list, hazard_list, cas_re, gas_re, solution_re
 from hazard_calculator.mylogger import logger
 
 from hazard_calculator.hazards import hazard_class_list, hazards_in_document_but_not_calculated
@@ -21,8 +20,11 @@ def calculate_flavor_hazards(formula_list):
     """
     The main function of this app; generates hazards given the formula of a flavor.
     
-    input: a list of formula line item objects
-    output: dictionary containing list of flavors and their hazards
+    1. In your main application, import hazard_calculator.models and hazard_calculator.tasks.
+    2. Instantiate a list of FormulaLineItem objects with cas numbers and flavors corresponding
+        to the formula of a flavor/product.
+    3. Call this function with the FormulaLineItem list as an argument.
+    4. Your output will be a dictionary containing the hazards of the product.
     
     """
     
@@ -72,7 +74,6 @@ def get_empty_subhazard_dict():
     
     
 def create_subhazard_dict(formula_list):
-
        
     """
     Given the consolidated leaf weights of a flavor (in the form of FormulaLineItem objects), 
@@ -82,6 +83,9 @@ def create_subhazard_dict(formula_list):
     
     Input: A list of leafweight objects, corresponding to ingredients and weights for a single flavor
     Output: A dictionary which contains the total 'accumulation' for each subhazard
+    
+    The output of this function is passed to the HazardAccumulator class, which uses these
+    'accumulations' to calculate the final product's hazards.
     
     """
     
@@ -165,8 +169,19 @@ def create_subhazard_dict(formula_list):
     
 
 def import_GHS_ingredients_from_document(path_to_document):
+    """
+    This function is used to import GHS Ingredient hazard information from a document.
+    This function will delete ALL existing GHS Ingredient information in the database
+    and replace it with the hazard information from the given document.
     
-    GHSIngredient.objects.all().delete()
+    There are two options for doing this:
+        1. Call this function from a shell.
+        2. Use the management command 'import_hazards' from the project directory
+        
+        In either case, pass the path to the hazard document as an argument.
+    
+    """
+    
     
     labels = xlrd.open_workbook(path_to_document)
     sheet = labels.sheets()[0]    
@@ -192,6 +207,9 @@ def import_GHS_ingredients_from_document(path_to_document):
         
          
     else:
+        
+        GHSIngredient.objects.all().delete()
+        
         for imported_ghsingredient in ghs_list:
             imported_ghsingredient.save()
         
@@ -213,13 +231,32 @@ class MultiplePhaseError(Exception):
     
     
 def import_row(sheet, row):
+    """
+    This function is a helper function for the main import function 'import_GHS_ingredients_from_document'.
+    It takes one of the rows of the document as an input, and returns the list of hazards that are specified in that row.
+    """
 
     cas_number = sheet.cell(row, 0).value
 
     #ignore rows that do not contain a cas number (table headers, footnote rows, etc)
     if cas_re.search(cas_number):
         
-        g_dict = parse_row(sheet, row, cas_number)
+        g_dict = {}
+        
+        g_dict['cas'] = cas_number
+        g_dict['reach'] = sheet.cell(row, 1).value
+        g_dict['name'] = sheet.cell(row, 2).value
+        g_dict['ghs_hazard_category'] = sheet.cell(row, 3).value
+        g_dict['ghs_change_indicators'] = sheet.cell(row, 4).value
+        g_dict['ghs_signal_words'] = sheet.cell(row, 5).value
+        g_dict['ghs_codes'] = sheet.cell(row, 6).value
+        g_dict['ghs_pictogram_codes'] = sheet.cell(row, 7).value
+        g_dict['synonyms'] = sheet.cell(row, 8).value
+    
+    
+        ingredient_hazard_dict = parse_ghs_hazard_category_cell(g_dict['ghs_hazard_category'], cas_number)
+        g_dict.update(ingredient_hazard_dict)        
+        
         g = GHSIngredient(**g_dict)
 
         return g
@@ -230,29 +267,14 @@ def import_row(sheet, row):
 
 
 
-def parse_row(sheet, row, cas_number):
-            
-    g_dict = {}
-    
-    g_dict['cas'] = cas_number
-    g_dict['reach'] = sheet.cell(row, 1).value
-    g_dict['name'] = sheet.cell(row, 2).value
-    g_dict['ghs_hazard_category'] = sheet.cell(row, 3).value
-    g_dict['ghs_change_indicators'] = sheet.cell(row, 4).value
-    g_dict['ghs_signal_words'] = sheet.cell(row, 5).value
-    g_dict['ghs_codes'] = sheet.cell(row, 6).value
-    g_dict['ghs_pictogram_codes'] = sheet.cell(row, 7).value
-    g_dict['synonyms'] = sheet.cell(row, 8).value
-
-
-    ingredient_hazard_dict = parse_ghs_hazard_category_cell(g_dict['ghs_hazard_category'], cas_number)
-    g_dict.update(ingredient_hazard_dict)
-    
-    return g_dict
-
-
-     
 def parse_ghs_hazard_category_cell(cell_contents, cas_number):
+    """
+    This function actually parses the 'tokens' found in the document.
+    
+    It is given the actual string contents of a cell, and it returns a dictionary of hazards that 
+    any of the tokens in the cell correspond to (if there are any).
+    """
+
 
     cell_contents = cell_contents
     
@@ -304,12 +326,6 @@ def parse_ghs_hazard_category_cell(cell_contents, cas_number):
             
         return duplicate_dict
     
-    
-    
-    """
-    input: cell_contents 
-    output: save hazards to ghsingredient
-    """
 
     hazard_list = []
 
