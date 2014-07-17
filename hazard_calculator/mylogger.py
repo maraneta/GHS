@@ -14,7 +14,7 @@ LOG_FILENAME = '/var/log/django/ghs.log'
 
 LOG_FILE_FORMAT = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
 
-logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO, format=LOG_FILE_FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(filename=LOG_FILENAME, level=logging.WARNING, format=LOG_FILE_FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p')
 logger = logging.getLogger()
 #logger.setFormatter(LOG_FILE_FORMAT)
 

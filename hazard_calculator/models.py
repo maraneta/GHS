@@ -547,18 +547,33 @@ class HazardAccumulator():
         
         hazard_dict = {}
         
-        for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
+#         for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
+#             
+#             hazard_dict[acute_hazard] = getattr(self, acute_hazard)
+#             
+#             if getattr(self, acute_hazard) != 'No':
+#                 hazard_dict[ld50_property] = self.subhazard_dict[ld50_property]
+#         
+#         for hazard_property in hazard_list:
+#             
+#             hazard_dict[hazard_property] = getattr(self, hazard_property)
+#             
+#         return hazard_dict
+    
+        from hazard_calculator.hazards import hazard_class_list
+        for HazardClass in hazard_class_list:
             
-            hazard_dict[acute_hazard] = getattr(self, acute_hazard)
+            hazard_dict[HazardClass.hazard_field] = getattr(self, HazardClass.hazard_field)
             
-            if getattr(self, acute_hazard) != 'No':
-                hazard_dict[ld50_property] = self.subhazard_dict[ld50_property]
-        
-        for hazard_property in hazard_list:
-            
-            hazard_dict[hazard_property] = getattr(self, hazard_property)
+            try:
+                if getattr(self, HazardClass.hazard_field) != 'No':
+                    hazard_dict[HazardClass.ld50_field] = self.subhazard_dict[HazardClass.ld50_field]
+            except:
+                #this happens if the hazardclass doesn't correspond to an acute hazard (no ld50 field)
+                pass
             
         return hazard_dict
+            
         
     def recalculate_hazards(self, formula_list):
         self.subhazard_dict = create_subhazard_dict(formula_list)

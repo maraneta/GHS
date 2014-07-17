@@ -73,7 +73,7 @@ will match '#anything ATI #anything (digit) #anything ( #anything digits #anythi
 
 ld50_re = re.compile('AT([IOD])[^\d]*(\d)[^(\d]*\([^\d]*([\d]+)[^)]*')
 
-
+inhalation_ld50_re = re.compile('ATI[^\d]*(\d)[^(\d]*\([^\d]*([\d]+)[^)]*')
         
 """        
 EH RE: covers EH A and EH C; returns chronic/acute and category
@@ -83,6 +83,7 @@ there must be ONE SPACE between 'EH' and either 'A' or 'C' and no space between 
 
 eh_re = re.compile('EH ([AC])(\d)')
 
+ca_re = re.compile('EH C(\d)')
 
 
 """
@@ -93,7 +94,7 @@ will not match if it does not contain fl fg or fs, or if there are no digits aft
 """
 flammable_re = re.compile('F([LGS])[^\d]*(\d)')
 
-
+fs_re = re.compile('FS[^\d]*(\d)')
 
 """
 tost_re: covers STO - SE and STO - RE
@@ -104,6 +105,9 @@ will match '#ANYTHING STO #ANYTHING - #ANYTHING (S or R) E #ANYTHING digit
 """
 
 tost_re = re.compile('STO[^-]*-[^SR]*([SR])E[^\d]*(\d(?:(?:-RI)?(?:-NE)?)?)')
+
+tost_single_re = re.compile('STO[^-]*-[^S]*([S])E[^\d]*(\d(?:(?:-RI)?(?:-NE)?)?)')
+tost_repeat_re = re.compile('STO[^-]*-[^R]*([R])E[^\d]*(\d)')
 
 """
 These are the re's for SCI, EDI, CAR, and SS
