@@ -1,5 +1,5 @@
-import xlrd  # @UnresolvedImport
 import re, copy
+from xlrd import open_workbook
 
 from django.db.models import Sum
 
@@ -183,7 +183,7 @@ def import_GHS_ingredients_from_document(path_to_document):
     """
     
     
-    labels = xlrd.open_workbook(path_to_document)
+    labels = open_workbook(path_to_document)
     sheet = labels.sheets()[0]    
 
     ghs_list = []

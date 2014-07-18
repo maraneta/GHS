@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# GHS Hazard Calculator documentation build configuration file, created by
-# sphinx-quickstart on Thu Jul 17 14:43:23 2014.
+# GHS Hazard App documentation build configuration file, created by
+# sphinx-quickstart on Fri Jul 18 10:45:33 2014.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -15,10 +15,32 @@
 import sys
 import os
 
+# import mock
+#  
+# MOCK_MODULES = ['xlrd', 'django.db.models', 'django.db']
+# for mod_name in MOCK_MODULES:
+#     sys.modules[mod_name] = mock.Mock()
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
+
+
 #sys.path.insert(0, os.path.abspath('.'))
+#sys.path.insert(0, '/var/www/django/ghs/hazard_calculator/')
+# sys.path.insert(0, os.path.abspath("../"))
+
+#print os.path.abspath("../ghs")
+
+sys.path.insert(0, os.path.abspath('../ghs'))
+
+# sys.path.insert(0, '/var/www/django/ghs/')
+# sys.path.insert(0, '/home/matta/workspace/ghs/')
+
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ghs.settings'
+from django.conf import settings
+
 
 # -- General configuration ------------------------------------------------
 
@@ -28,7 +50,10 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -43,7 +68,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'GHS Hazard Calculator'
+project = u'GHS Hazard App'
 copyright = u'2014, Matt Araneta'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -176,7 +201,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'GHSHazardCalculatordoc'
+htmlhelp_basename = 'GHSHazardAppdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -196,7 +221,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'GHSHazardCalculator.tex', u'GHS Hazard Calculator Documentation',
+  ('index', 'GHSHazardApp.tex', u'GHS Hazard App Documentation',
    u'Matt Araneta', 'manual'),
 ]
 
@@ -226,7 +251,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'ghshazardcalculator', u'GHS Hazard Calculator Documentation',
+    ('index', 'ghshazardapp', u'GHS Hazard App Documentation',
      [u'Matt Araneta'], 1)
 ]
 
@@ -240,8 +265,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'GHSHazardCalculator', u'GHS Hazard Calculator Documentation',
-   u'Matt Araneta', 'GHSHazardCalculator', 'One line description of project.',
+  ('index', 'GHSHazardApp', u'GHS Hazard App Documentation',
+   u'Matt Araneta', 'GHSHazardApp', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -256,3 +281,7 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'http://docs.python.org/': None}
