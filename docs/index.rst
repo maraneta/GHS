@@ -33,14 +33,13 @@ Configuration
 
 1. Download the GHS django project.
 2. Add ``hazard_calculator`` to ``INSTALLED_APPS``.
-3. In your settings file, add the path to the GHS project (where the ''hazard_calculator'' module is located) to your system path. ::
+3. In your settings file, add the path to the GHS project (where the ``hazard_calculator`` module is located) to your system path. ::
 
 	sys.path.append('/path/to/ghs')
 
-4. Change the ''ghs.settings'' file and ensure that the database configuration is correct (use the same database as your main application).
+4. Change the ``ghs.settings`` file and ensure that the database configuration is correct (use the same database as your main application).
 
 
-.. _mainfunctions:
 
 Main Functions
 ==============

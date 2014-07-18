@@ -32,7 +32,8 @@ import os
 
 #print os.path.abspath("../ghs")
 
-sys.path.insert(0, os.path.abspath('../ghs'))
+#sys.path.insert(0, os.path.abspath('../ghs'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # sys.path.insert(0, '/var/www/django/ghs/')
 # sys.path.insert(0, '/home/matta/workspace/ghs/')
