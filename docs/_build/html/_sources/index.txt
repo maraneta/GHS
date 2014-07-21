@@ -40,6 +40,7 @@ Configuration
 4. Change the ``ghs.settings`` file and ensure that the database configuration is correct (use the same database as your main application).
 
 
+.. _mainfunctions:
 
 Main Functions
 ==============

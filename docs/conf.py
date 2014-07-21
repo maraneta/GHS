@@ -13,6 +13,34 @@
 # serve to show the default.
 
 import sys
+
+class Mock(object):
+
+    __all__ = []
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return Mock()
+
+    @classmethod
+    def __getattr__(cls, name):
+        if name in ('__file__', '__path__'):
+            return '/dev/null'
+        elif name[0] == name[0].upper():
+            mockType = type(name, (), {})
+            mockType.__module__ = __name__
+            return mockType
+        else:
+            return Mock()
+
+MOCK_MODULES = ['xlrd', 'LOCAL_SECRETS']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = Mock()
+
+
+import sys
 import os
 
 # import mock
@@ -32,15 +60,28 @@ import os
 
 #print os.path.abspath("../ghs")
 
-#sys.path.insert(0, os.path.abspath('../ghs'))
-sys.path.insert(0, os.path.abspath('../..'))
 
-# sys.path.insert(0, '/var/www/django/ghs/')
+ghs_path = os.path.abspath('../')
+django_path = os.path.abspath('../..')
+
+print ghs_path
+print django_path
+
+sys.path.insert(0, ghs_path)
+sys.path.insert(0, django_path)
+
+#print sys.path
+
+#sys.path.insert(0, '/var/www/django/ghs/')
 # sys.path.insert(0, '/home/matta/workspace/ghs/')
 
+# sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# os.environ['DJANGO_SETTINGS_MODULE'] = 'ghs.settings'
+# from django.conf import settings
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ghs.settings'
-from django.conf import settings
+# import settings
+# from django.core.management import setup_environ
+# setup_environ(settings)
 
 
 # -- General configuration ------------------------------------------------
