@@ -7,12 +7,7 @@ GHS Hazard Calculator
 =====================
 
 The GHS Hazard Calculator application provides a way to easily determine the hazards of a product, specified by 
-the Globally Harmonized System of Classification and Labelling of Chemicals (GHS).  A user can find the hazards
-of a flavor in a few steps:
-
-1. Import the GHS label document (contains cas numbers and hazards for raw materials).
-2. Find the CAS numbers and weights of all ingredients in the product's formula.
-3. Input that data into ``calculate_flavor_hazards`` to get the product's calculated hazards.
+the Globally Harmonized System of Classification and Labelling of Chemicals (GHS).  
 
 .. Contents:
 
@@ -32,24 +27,21 @@ Configuration
 =============
 
 1. Download the GHS django project.
-2. Add ``hazard_calculator`` to ``INSTALLED_APPS``.
-3. In your settings file, add the path to the GHS project (where the ``hazard_calculator`` module is located) to your system path. ::
-
-	sys.path.append('/path/to/ghs')
-
+2. cd to the root directory and run the following command to install ghs-hazard-calculator: ::
+	
+	python setup.py install
+	
+3. Add ``hazard_calculator`` to ``INSTALLED_APPS``.
 4. Change the ``ghs.settings`` file and ensure that the database configuration is correct (use the same database as your main application).
 
 
-.. _mainfunctions:
 
-Main Functions
-==============
+Usage
+=====
 
-.. automodule:: hazard_calculator.tasks
+A user can find the hazards of a flavor in a few steps:
 
-
-.. autofunction:: import_GHS_ingredients_from_document   
-.. autofunction:: calculate_flavor_hazards  
-
-
+1. Import the GHS label document (contains cas numbers and hazards for raw materials).
+2. Find the CAS numbers and weights of all ingredients in the product's formula.
+3. Input that data into ``calculate_flavor_hazards`` to get the product's calculated hazards.
 
