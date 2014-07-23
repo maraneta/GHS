@@ -31,8 +31,16 @@ Configuration
 	
 	python setup.py install
 	
-3. Add ``hazard_calculator`` to ``INSTALLED_APPS``.
-4. The ``hazard_calculator`` app should now be installed.
+3. In your project settings file, add ``hazard_calculator`` to ``INSTALLED_APPS``.
+4. In your project settings file, under ``TEMPLATE_LOADERS``, uncomment or add the following line. ::
+
+	'django.template.loaders.eggs.load_template_source'
+	
+   This allows your project to use templates from the GHS Hazard Calculator python egg that 
+   was installed via the ``setup.py`` command above.
+
+5. The ``hazard_calculator`` app should now be properly installed and configured.  Try visiting 
+   the url ``/ghs_app/hazard_calculator``.
 
 
 
