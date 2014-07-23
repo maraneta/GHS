@@ -5,7 +5,7 @@ from django.db.models import Sum
 
 from hazard_calculator.models import GHSIngredient, HazardAccumulator
 from hazard_calculator.utils import acute_toxicity_list, hazard_list, cas_re, gas_re, solution_re
-from hazard_calculator.mylogger import logger
+from hazard_calculator.mylogger import get_my_logger
 
 from hazard_calculator.hazards import hazard_class_list, hazards_in_document_but_not_calculated
 
