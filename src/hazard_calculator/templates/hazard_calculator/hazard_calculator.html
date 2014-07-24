@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block htmlhead %}
+	{% include "htmlhead.html" %}
+	<link href="{{ STATIC_URL }}bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+ 
+
+{% block content %}
+<div id="content-main">
+
+	<form action="" method="POST">
+	{{ management_form }}
+	{% csrf_token %}
+	
+	<table id="formula-rows" width="100%">
+		<tr>
+			<th>CAS Number</th>
+			<th>Name</th>
+			<th>Weight</th>
+			<th>Delete</th>
+		</tr>
+
+		{% for form in formset %}
+		{% if form.errors %}
+		<tr>
+			<td class="highlight" colspan="4"><b>	 Please correct the error(s) in the following row. {{form.non_field_errors}}</b></td>
+		</tr>
+		{% endif %}
+		<tr class="formula_row">	
+			<td class="number-cell">{{ form.cas.as_text }}{{ form.cas.errors }}</td>
+			<td class="name-cell">{{ form.name.as_text }}{{ form.name.errors }}</td>
+			<td class="amount-cell">{{ form.weight.as_text }}{{ form.weight.errors}}</td>
+			<td class="del-row" ><input type="button" value="X" onclick="FORMULA_EDIT.delete_row(this.parentNode.parentNode.rowIndex)"></td>
+		</tr>
+		{% endfor %}
+	</table>
+	<input id="add-formula-row-button" type="submit" value="Add row" />
+	<input id="formula-submit-button" type="submit" value="Submit Formula" />		
+	</form>
+</div>
+
+{% endblock %}
