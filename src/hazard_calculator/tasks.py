@@ -163,8 +163,7 @@ def create_subhazard_dict(formula_list):
             for key in weights_to_add:
                 hazard_dict[key] += weights_to_add[key]
         
-        
-    logger.info(hazard_dict)
+    get_my_logger().info(hazard_dict)    
     return hazard_dict    
     
 
@@ -202,8 +201,8 @@ def import_GHS_ingredients_from_document(path_to_document):
             multiplephase_list.append(e.cas)
             
     if multiplephase_list:
-        logger.warning("The following cas numbers contain multiple sets of hazards.  Alter the input document to have only one set of hazards per cas number.\n%s\n" % ', '.join(multiplephase_list))
-        logger.warning("Ingredients were not imported.")
+        get_my_logger().warning("The following cas numbers contain multiple sets of hazards.  Alter the input document to have only one set of hazards per cas number.\n%s\n" % ', '.join(multiplephase_list))
+        get_my_logger().warning("Ingredients were not imported.")
         
          
     else:
@@ -218,7 +217,7 @@ def import_GHS_ingredients_from_document(path_to_document):
         p.name = 'Placeholder Ingredient (ignore this)'
         p.save()
         
-        logger.info("Ingredients imported successfully.")
+        get_my_logger().info("Ingredients imported successfully.")
 
 
 class MultiplePhaseError(Exception):
@@ -352,8 +351,8 @@ def parse_ghs_hazard_category_cell(cell_contents, cas_number):
                 
         for hazard, potential_categories in find_duplicate_hazards().iteritems():
             
-            logger.info("Found duplicate hazards for CAS number %s" % cas_number) 
-            logger.info("Hazard: %s, Potential Categories: %s" % (hazard, potential_categories))
+            get_my_logger().info("Found duplicate hazards for CAS number %s" % cas_number) 
+            get_my_logger().info("Hazard: %s, Potential Categories: %s" % (hazard, potential_categories))
             
             lowest_index = 1000000 #any number > 7 will work
             for category in potential_categories:
@@ -373,7 +372,7 @@ def parse_ghs_hazard_category_cell(cell_contents, cas_number):
             #append the hazard with its most hazardous category 
             hazard_list.append((hazard, most_hazardous_category))
             
-            logger.info("Using most hazardous category: (%s: %s)\n" % (hazard, most_hazardous_category))
+            get_my_logger().info("Using most hazardous category: (%s: %s)\n" % (hazard, most_hazardous_category))
                 
                         
     #return hazard_list

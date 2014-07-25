@@ -1,5 +1,4 @@
 include LICENSE
 include README.rst
 recursive-include src/hazard_calculator *
-recursive-include hazard_calculator/templates * 
 recursive-include docs *

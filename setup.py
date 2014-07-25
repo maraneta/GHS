@@ -16,6 +16,8 @@ setup(
     description='A Django app that calculates hazards of products.',
     long_description=README,
     url='http://www.example.com/',
+    zip_safe=False, #this installs the egg as a directory; allows django egg loader to find staticfiles
+    install_requires = ['django-autocomplete-light>=1.4.14'],
     author='Matt Araneta',
     author_email='maraneta@foo.com',
     classifiers=[

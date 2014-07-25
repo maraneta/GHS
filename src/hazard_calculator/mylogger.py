@@ -1,9 +1,10 @@
 import os, sys, errno, logging
  
  
-_logger = False
-
 def get_my_logger():
+    
+    _logger = False
+    
     if _logger:
         return _logger
      
@@ -32,7 +33,7 @@ def get_my_logger():
     STDOUT_LOG_FORMAT = logging.Formatter('%(message)s') 
      
     log_handler = logging.StreamHandler(sys.stdout)
-    log_handler.setLevel(logging.INFO)
+    log_handler.setLevel(logging.WARNING) #change the log level here
     log_handler.setFormatter(STDOUT_LOG_FORMAT)
      
     logger.addHandler(log_handler)
