@@ -163,7 +163,7 @@ def create_subhazard_dict(formula_list):
             for key in weights_to_add:
                 hazard_dict[key] += weights_to_add[key]
         
-    get_my_logger().info(hazard_dict)    
+    #get_my_logger().info(hazard_dict)    
     return hazard_dict    
     
 

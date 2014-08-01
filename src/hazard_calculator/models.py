@@ -8,9 +8,6 @@ class GHSIngredient(models.Model):
     def __unicode__(self):
         return u"%s: %s" % (self.cas, self.name)
         
-
-        
-        
     cas = models.CharField(
         max_length=15,
         unique=True)
@@ -112,7 +109,7 @@ class GHSIngredient(models.Model):
     gases_ld50 = models.DecimalField(decimal_places = 3, max_digits = 10, null=True)
     vapors_ld50 = models.DecimalField(decimal_places = 3, max_digits = 10, null=True)
     dusts_mists_ld50 = models.DecimalField(decimal_places = 3, max_digits = 10, null=True)
-    inhalation_ld50 = models.DecimalField(decimal_places = 3, max_digits = 10, null=True)
+    #inhalation_ld50 = models.DecimalField(decimal_places = 3, max_digits = 10, null=True)
     
     '''
     ALTER TABLE "access_integratedproduct" ADD COLUMN oral_ld50 numeric(10,3);
@@ -160,8 +157,8 @@ class GHSIngredient(models.Model):
     tost_repeat_hazard = models.CharField("TOST Repeated Exposure",max_length=50,blank=True,
                                 choices=TOST_REPEAT_EXPOSURE_CHOICES) 
     
-    acute_hazard_inhalation = models.CharField("Acute Toxicity - Oral", max_length=50,blank=True,
-                               choices=ACUTE_TOXICITY_CHOICES)
+    #acute_hazard_inhalation = models.CharField("Acute Toxicity - Oral", max_length=50,blank=True,
+    #                           choices=ACUTE_TOXICITY_CHOICES)
     
     
     #NOT IN PACKET
@@ -237,7 +234,7 @@ class GHSIngredient(models.Model):
                                choices=OXIDIZING_SOLID_CHOICES)
     organic_peroxide_hazard = models.CharField("Organic Peroxides", max_length=50,blank=True,
                                choices=ORGANIC_PEROXIDE_CHOICES)
-    metal_corrosifve_hazard = models.CharField("Corrosive to Metals", max_length=50,blank=True,
+    metal_corrosive_hazard = models.CharField("Corrosive to Metals", max_length=50,blank=True,
                                choices=CORROSIVE_TO_METAL_CHOICES)    
 
 class FormulaLineItem(models.Model):
@@ -265,9 +262,7 @@ class HazardAccumulator():
     """    
     
     def __init__(self, subhazard_dict):
-        #self.flavor = flavor
-        
-        #self.subhazard_dict = self.flavor.accumulate_hazards()
+
         self.subhazard_dict = subhazard_dict
                 
         self.total_weight = self.subhazard_dict['total_weight']
@@ -301,8 +296,7 @@ class HazardAccumulator():
         eye_damage_2 = self.subhazard_dict['eye_damage_hazard_2A'] + self.subhazard_dict['eye_damage_hazard_2B']
         
         if (skin_corrosion_1 + eye_damage_1)/self.subhazard_dict['total_weight'] * 100 >= Decimal('3.0'):
-            #test = (skin_corrosion_1 + eye_damage_1)/self.subhazard_dict['total_weight'] * 100
-            return '1'# % test
+            return '1'
         
         elif (10*(skin_corrosion_1 + eye_damage_1) + eye_damage_2)/self.subhazard_dict['total_weight'] * 100 >= Decimal('10.0'):
             #if all the ingredients are in eye_damage_2, it is in category 2B
@@ -425,7 +419,6 @@ class HazardAccumulator():
     @property
     def acute_hazard_oral(self):
 
-        #oral_ld50 = self.flavor.oral_ld50
         oral_ld50 = self.subhazard_dict['oral_ld50']
         
         if 0 < oral_ld50 <= 5:
@@ -442,10 +435,8 @@ class HazardAccumulator():
     @property
     def acute_hazard_dermal(self):
         
-        #dermal_ld50 = self.flavor.dermal_ld50
         dermal_ld50 = self.subhazard_dict['dermal_ld50']
         
-        #save_ld50(self.flavor, 'dermal_ld50', dermal_ld50)
         
         if 0 < dermal_ld50 <= 50:
             return '1'
@@ -461,7 +452,6 @@ class HazardAccumulator():
     @property
     def acute_hazard_gases(self):
                 
-        #gases_ld50 = self.flavor.gases_ld50
         gases_ld50 = self.subhazard_dict['gases_ld50']
         
         if 0 < gases_ld50 <= 100:
@@ -478,7 +468,6 @@ class HazardAccumulator():
     @property
     def acute_hazard_vapors(self):
         
-        #vapors_ld50 = self.flavor.vapors_ld50
         vapors_ld50 = self.subhazard_dict['vapors_ld50']
         
         if 0 < vapors_ld50 <= 0.5:
@@ -495,7 +484,6 @@ class HazardAccumulator():
     @property
     def acute_hazard_dusts_mists(self):
         
-        #dusts_mists_ld50 = self.flavor.dusts_mists_ld50
         dusts_mists_ld50 = self.subhazard_dict['dusts_mists_ld50']
         
         if 0 < dusts_mists_ld50 <= 0.05:
@@ -547,19 +535,7 @@ class HazardAccumulator():
         
         hazard_dict = {}
         
-#         for acute_hazard, ld50_property, unknown_weight_key, max_ld50 in acute_toxicity_list:
-#             
-#             hazard_dict[acute_hazard] = getattr(self, acute_hazard)
-#             
-#             if getattr(self, acute_hazard) != 'No':
-#                 hazard_dict[ld50_property] = self.subhazard_dict[ld50_property]
-#         
-#         for hazard_property in hazard_list:
-#             
-#             hazard_dict[hazard_property] = getattr(self, hazard_property)
-#             
-#         return hazard_dict
-    
+   
         from hazard_calculator.hazards import hazard_class_list
         for HazardClass in hazard_class_list:
             

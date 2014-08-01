@@ -16,4 +16,5 @@ urlpatterns = patterns('hazard_calculator.views',
     # url(r'^admin/', include(admin.site.urls)),
     
     (r'^hazard_calculator/$', 'hazard_calculator'),
+    (r'^ingredient_autocomplete/$', 'ingredient_autocomplete'),
 )

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from hazard_calculator.tasks import save_ingredient_hazards
+from hazard_calculator.tasks import import_GHS_ingredients_from_document
 
 class Command(BaseCommand):
     #args = '<poll_id poll_id ...>'
@@ -16,5 +16,5 @@ class Command(BaseCommand):
 # 
 #             poll.opened = False
 #             poll.save()
-        save_ingredient_hazards(document_path)
+        import_GHS_ingredients_from_document(document_path)
         #self.stdout.write('Successfully closed poll "%s"\n' % poll_id)

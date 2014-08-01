@@ -1,10 +1,12 @@
-{% extends "base.html" %}
+<link rel="stylesheet" href="{{ STATIC_URL }}hazard_calculator/lib/jquery-ui-1.11.0/jquery-ui.min.css">
 
-{% block htmlhead %}
-	{% include "htmlhead.html" %}
-	<link href="{{ STATIC_URL }}bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-{% endblock %}
- 
+<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/lib/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/lib/jquery-ui-1.11.0/external/jquery/jquery.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/lib/jquery-ui-1.11.0/jquery-ui.min.js"></script>
+
+
+<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/js/hazard_calculator.js"></script>
+<link rel="stylesheet" href="{{ STATIC_URL }}hazard_calculator/css/hazard_calculator.css">
 
 {% block content %}
 <div id="content-main">
@@ -16,7 +18,6 @@
 	<table id="formula-rows" width="100%">
 		<tr>
 			<th>CAS Number</th>
-			<th>Name</th>
 			<th>Weight</th>
 			<th>Delete</th>
 		</tr>
@@ -28,9 +29,8 @@
 		</tr>
 		{% endif %}
 		<tr class="formula_row">	
-			<td class="number-cell">{{ form.cas.as_text }}{{ form.cas.errors }}</td>
-			<td class="name-cell">{{ form.name.as_text }}{{ form.name.errors }}</td>
-			<td class="amount-cell">{{ form.weight.as_text }}{{ form.weight.errors}}</td>
+			<td class="number-cell">{{ form.cas }}{{ form.cas.errors }}</td>
+			<td class="amount-cell">{{ form.weight }}{{ form.weight.errors }}</td>
 			<td class="del-row" ><input type="button" value="X" onclick="FORMULA_EDIT.delete_row(this.parentNode.parentNode.rowIndex)"></td>
 		</tr>
 		{% endfor %}
