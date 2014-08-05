@@ -100,6 +100,9 @@ ACUTE HAZARDS
 
 class AcuteToxicityOral():
     #put hazard specific parameters in these classes and pass them into the base functions
+    human_readable_field = 'Acute Toxicity Hazard: Oral'
+    human_readable_ld50 = 'Acute Toxicity Oral LD50'
+
     hazard_field = 'acute_hazard_oral'
     ld50_field = 'oral_ld50'
     unknown_weight_key = 'oral_unknown'
@@ -125,6 +128,9 @@ class AcuteToxicityOral():
         return AcuteToxicityOral.hazard_field, AcuteToxicityOral.unknown_weight_key
  
 class AcuteToxicityDermal():
+    human_readable_field = 'Acute Toxicity Hazard: Dermal'
+    human_readable_ld50 = 'Acute Toxicity Dermal LD50'
+
     hazard_field = 'acute_hazard_dermal'
     ld50_field = 'dermal_ld50'
     unknown_weight_key = 'dermal_unknown'
@@ -150,6 +156,9 @@ class AcuteToxicityDermal():
         return AcuteToxicityDermal.hazard_field, AcuteToxicityDermal.unknown_weight_key
                        
 class AcuteToxicityInhalation():
+    human_readable_field = 'Acute Toxicity Hazard: Gases/Inhalation'
+    human_readable_ld50 = 'Acute Toxicity Gas/Inhalation LD50'
+
     hazard_field = 'acute_hazard_gases'
     ld50_field = 'gases_ld50'
     unknown_weight_key = 'gases_unknown'
@@ -181,7 +190,8 @@ NON ACUTE HAZARDS
 ''' 
  
 class SkinCorrosionHazard():
-    
+
+    human_readable_field = 'Skin Corrosion Hazard'
     hazard_field = 'skin_corrosion_hazard'
     sci_re = re.compile('SCI[^\d]*(\d[ABC]?)')
     
@@ -198,7 +208,8 @@ class SkinCorrosionHazard():
         return basehazard_get_subhazard_dict_keys(SkinCorrosionHazard.hazard_field)
  
 class EyeDamageHazard():
-    
+
+    human_readable_field = 'Eye Damage Hazard'
     hazard_field = 'eye_damage_hazard'
     edi_re = re.compile('EDI[^\d]*(\d[ABC]?)')
     
@@ -215,7 +226,8 @@ class EyeDamageHazard():
         return basehazard_get_subhazard_dict_keys(EyeDamageHazard.hazard_field)
     
 class CarcinogenicityHazard():
-    
+
+    human_readable_field = 'Carcinogenicity Hazard'
     hazard_field = 'carcinogenicity_hazard'
     car_re = re.compile('CAR[^\d]*(\d[ABC]?)')
     
@@ -232,8 +244,8 @@ class CarcinogenicityHazard():
         return basehazard_get_subhazard_dict_keys(CarcinogenicityHazard.hazard_field)
   
 class TostSingleHazard():
-    
-    
+
+    human_readable_field = 'Target Organ System Toxicity: Single Exposure Hazard'
     hazard_field = 'tost_single_hazard'
     tost_single_re = re.compile('STO[^-]*-[^S]*SE[^\d]*(\d(?:(?:-RI)?(?:-NE)?)?)')
     
@@ -270,7 +282,8 @@ class TostSingleHazard():
          
 
 class TostRepeatHazard():
-    
+
+    human_readable_field = 'Target Organ System Toxicity: Repeated Exposure Hazard'
     hazard_field = 'tost_repeat_hazard'
     tost_repeat_re = re.compile('STO[^-]*-[^R]*RE[^\d]*(\d)')
 
@@ -288,7 +301,8 @@ class TostRepeatHazard():
  
 
 class SkinSensitizationHazard():
-    
+
+    human_readable_field = 'Skin Sensitization Hazard'
     hazard_field = 'skin_sensitization_hazard'
     ss_re = re.compile('SS[^\d]*(\d[ABC]?)')
     
@@ -316,6 +330,7 @@ during import.  HOWEVER, they are NOT calculated for final products, and do not 
 
 
 class ChronicAquaticHazard():
+    human_readable_field = 'Chronic Aquatic Toxicity Hazard'
     hazard_field = 'chronic_aquatic_toxicity_hazard'
     ca_re = re.compile('EH C(\d)')
     
@@ -325,6 +340,7 @@ class ChronicAquaticHazard():
 
 
 class AcuteAquaticHazard():
+    human_readable_field = 'Acute Aquatic Toxicity Hazard'
     hazard_field = 'acute_aquatic_toxicity_hazard'
     aa_re = re.compile('EH A(\d)')
     
@@ -334,6 +350,7 @@ class AcuteAquaticHazard():
 
 
 class FlammableSolidHazard():
+    human_readable_field = 'Flammable Solid Hazard'
     hazard_field = 'flammable_solid_hazard'
     fs_re = re.compile('FS[^\d]*(\d)')
     
@@ -342,6 +359,7 @@ class FlammableSolidHazard():
         return basehazard_process_re(cell_contents, FlammableSolidHazard.hazard_field, FlammableSolidHazard.fs_re)    
 
 class FlammableLiquidHazard():
+    human_readable_field = 'Flammable Liquid Hazard'
     hazard_field = 'flammable_liquid_hazard'
     fl_re = re.compile('FL[^\d]*(\d)')
     
@@ -350,6 +368,7 @@ class FlammableLiquidHazard():
         return basehazard_process_re(cell_contents, FlammableLiquidHazard.hazard_field, FlammableLiquidHazard.fl_re)    
 
 class FlammableGasHazard():
+    human_readable_field = 'Flammable Gas Hazard'
     hazard_field = 'emit_flammable_hazard'
     fg_re = re.compile('FG[^\d]*(\d)')
     

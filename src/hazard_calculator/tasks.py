@@ -15,7 +15,7 @@ from hazard_calculator.hazards import hazard_class_list, hazards_in_document_but
             
  
 
-def calculate_flavor_hazards(formula_list):
+def calculate_flavor_hazards(formula_list, human_readable=False):
     
     """
     The main function of this app; generates hazards given the formula of a flavor.
@@ -32,8 +32,8 @@ def calculate_flavor_hazards(formula_list):
     subhazard_dict = create_subhazard_dict(formula_list)
           
     accumulator = HazardAccumulator(subhazard_dict)
-      
-    hazard_dict = accumulator.get_hazard_dict()
+
+    hazard_dict = accumulator.get_hazard_dict(human_readable)
     
     return hazard_dict
     

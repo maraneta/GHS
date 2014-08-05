@@ -15,22 +15,43 @@ def hazard_calculator(request):
     page_title = "GHS Hazard Calculator"
     
     FormulaFormSet = formset_factory(FormulaRow, extra=5, can_delete=True)
-    
+
+    product_hazards = None
+
     if request.method == 'POST':
         formset = FormulaFormSet(request.POST)
         if formset.is_valid():
             formula_list = []
             for form in formset.forms:
-                fli = FormulaLineItem(cas = form.cleaned_data['cas'],
+                try:
+                    fli = FormulaLineItem(cas = form.cleaned_data['cas'],
                                        weight = form.cleaned_data['weight'])
-                formula_list.append(fli)
-            
-            product_hazards = calculate_flavor_hazards(formula_list)
+                    formula_list.append(fli)
+                except KeyError:
+                    continue
+
+
+            product_hazards = calculate_flavor_hazards(formula_list, human_readable=True)
+
+            #formula_details contains information that will be displayed to the user
+            formula_details = []
+
+            total_weight = sum([fli.weight for fli in formula_list])
+            for fli in formula_list:
+                formula_details.append((fli.cas, GHSIngredient.objects.get(cas=fli.cas).name, fli.weight, fli.weight/total_weight * 100))
+
+            return render_to_response('hazard_calculator/hazard_results.html',
+                                 {'formset': formset.forms,
+                                  'formula_list': formula_list,
+                                  'product_hazards': product_hazards,
+                                  'formula_details': formula_details,
+                                  'management_form': formset.management_form,
+                                  },
+                                 context_instance=RequestContext(request))
             
     else:
         formset = FormulaFormSet()
-        product_hazards = None
-        
+
 
     return render_to_response('hazard_calculator/hazard_calculator.html', 
                       {'page_title': page_title,

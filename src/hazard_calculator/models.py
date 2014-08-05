@@ -529,33 +529,43 @@ class HazardAccumulator():
                 ld50 = None
             
             self.subhazard_dict[ld50_property] = ld50
-    
-    
-    def get_hazard_dict(self):
+
+
+
+    def get_hazard_dict(self, human_readable):
         
         hazard_dict = {}
         
    
         from hazard_calculator.hazards import hazard_class_list
         for HazardClass in hazard_class_list:
+
+            if human_readable:
+                hazard_key = HazardClass.human_readable_field
+                ld50_key = getattr(HazardClass, 'human_readable_ld50', None)
+
+
+            else:
+                hazard_key = HazardClass.hazard_field
+                ld50_key = getattr(HazardClass, 'ld50_field', None)
+
             
-            hazard_dict[HazardClass.hazard_field] = getattr(self, HazardClass.hazard_field)
-            
-            try:
+            hazard_dict[hazard_key] = getattr(self, HazardClass.hazard_field)
+
+            if ld50_key is not None:
                 if getattr(self, HazardClass.hazard_field) != 'No':
-                    hazard_dict[HazardClass.ld50_field] = self.subhazard_dict[HazardClass.ld50_field]
-            except:
-                #this happens if the hazardclass doesn't correspond to an acute hazard (no ld50 field)
-                pass
-            
+                    hazard_dict[ld50_key] = self.subhazard_dict[HazardClass.ld50_field]
+
         return hazard_dict
-            
+
+
         
     def recalculate_hazards(self, formula_list):
         self.subhazard_dict = create_subhazard_dict(formula_list)
         self.calculate_ld50s()
-        
-        
+
+
+
 
 def save_ld50(flavor, ld50_attr, ld50):
     setattr(flavor, ld50_attr, ld50)
