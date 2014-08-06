@@ -15,7 +15,7 @@ from hazard_calculator.hazards import hazard_class_list, hazards_in_document_but
             
  
 
-def calculate_flavor_hazards(formula_list, human_readable=False):
+def calculate_flavor_hazards(formula_list):
     
     """
     The main function of this app; generates hazards given the formula of a flavor.
@@ -27,18 +27,32 @@ def calculate_flavor_hazards(formula_list, human_readable=False):
     4. Your output will be a dictionary containing the hazards of the product.
     
     """
-    
-    
-    subhazard_dict = create_subhazard_dict(formula_list)
-          
-    accumulator = HazardAccumulator(subhazard_dict)
 
-    hazard_dict = accumulator.get_hazard_dict(human_readable)
+    subhazard_dict = create_subhazard_dict(formula_list)
+    accumulator = HazardAccumulator(subhazard_dict)
+    hazard_dict = accumulator.get_hazard_dict()
     
     return hazard_dict
-    
+
+
+
+def get_hazard_list(formula_list):
+
+    """
+    This function is identical to calculate_flavor_hazards, but it is only meant for use in the
+    GHS hazard_calculator view.  It returns a list rather than a dict (can control order), and
+    rounds the ld50 values if there are any.
+    """
+
+    subhazard_dict = create_subhazard_dict(formula_list)
+    accumulator = HazardAccumulator(subhazard_dict)
+    hazard_list = accumulator.get_hazard_list()
+
+    return hazard_list
     
 
+def print_sds(hazard_dict):
+    pass
 
 
 empty_subhazard_dict = {}   

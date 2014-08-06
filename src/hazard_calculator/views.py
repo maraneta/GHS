@@ -1,19 +1,19 @@
 # Create your views here.
 import re
 
-from django.forms.models import modelformset_factory, formset_factory
+from django.forms.models import formset_factory
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponse
 from django.template import RequestContext
 from django.utils import simplejson
 
-from hazard_calculator.tasks import calculate_flavor_hazards
+from hazard_calculator.tasks import get_hazard_list
 from hazard_calculator.models import FormulaLineItem, GHSIngredient
 from hazard_calculator.forms import FormulaRow
 
 def hazard_calculator(request):
     page_title = "GHS Hazard Calculator"
-    
+
     FormulaFormSet = formset_factory(FormulaRow, extra=5, can_delete=True)
 
     product_hazards = None
@@ -30,8 +30,9 @@ def hazard_calculator(request):
                 except KeyError:
                     continue
 
+            return redirect('hazard_calculator', foo=GHSIngredient.objects.all()[:10])
 
-            product_hazards = calculate_flavor_hazards(formula_list, human_readable=True)
+            product_hazards = get_hazard_list(formula_list)
 
             #formula_details contains information that will be displayed to the user
             formula_details = []
@@ -60,7 +61,19 @@ def hazard_calculator(request):
                        'management_form': formset.management_form,
                        },
                        context_instance=RequestContext(request))    
-    
+
+
+# def safety_data_sheet(request, cas):
+#     #If the url contains request.GET hazard data, that data will be used for the SDS.
+#
+#
+#
+#     #If the url contains a cas number, the view will display the SDS for that ingredient
+
+
+
+
+
 def ingredient_autocomplete(request):
     """
     This returns a JSON object that is an array of objects that have 

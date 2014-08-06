@@ -1,78 +1,42 @@
-<!--JQuery and JQuery UI-->
-<link rel="stylesheet" href="{{ STATIC_URL }}hazard_calculator/lib/jquery-ui-1.11.0/jquery-ui.min.css">
-
-<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/lib/jquery-1.11.1.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/lib/jquery-ui-1.11.0/external/jquery/jquery.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/lib/jquery-ui-1.11.0/jquery-ui.min.js"></script>
-
-<!--Bootstrap-->
-<link rel="stylesheet" href="{{ STATIC_URL }}hazard_calculator/lib/bootstrap-3.2/css/bootstrap.min.css">
-<script src="{{ STATIC_URL }}hazard_calculator/lib/bootstrap-3.2/js/bootstrap.min.js"></script>
-
-<script type="text/javascript" src="{{ STATIC_URL }}hazard_calculator/js/hazard_calculator.js"></script>
-<link rel="stylesheet" href="{{ STATIC_URL }}hazard_calculator/css/hazard_calculator.css">
+{% extends "hazard_calculator/base.html" %}
 
 {% block content %}
+     <div id="content-main">
+        <div class="container">
+            <div class="panel panel-default">
 
-<div id="content-main">
+                <div class="panel-heading"><h2>Hazard Calculator</h2></div>
 
-    <div class="navbar navbar-inverse navbar-static-top" role="navigation">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">GHS Hazard Application</a>
+                <form action="" method="POST" >
+                {{ management_form }}
+                {% csrf_token %}
+
+                <table class="table table-condensed" id="formula-rows" width="100%">
+                    <tr>
+                        <th>CAS Number</th>
+                        <th>Weight</th>
+                        <th>Delete</th>
+                    </tr>
+
+                    {% for form in formset %}
+                    {% if form.errors %}
+                    <tr class="formula_row danger" >
+                    {% else %}
+                    <tr class="formula_row">
+                    {% endif %}
+                        <td class="number-cell">{{ form.cas }}{{ form.cas.errors }}{{form.non_field_errors}}</td>
+                        <td class="amount-cell">{{ form.weight }}{{ form.weight.errors }}</td>
+                        <td class="deleterow" ><div class='glyphicon glyphicon-remove'></div></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+
+                <button class='addnewrow'> New Row <span class="glyphicon glyphicon-plus"></span></button>
+
+                <input id="formula-submit-button" type="submit" value="Submit Formula" />
+                </form>
+            </div>
+
         </div>
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="/ghs_app/hazard_calculator/">Home</a></li>
-            <li><a href="#results">Results</a></li>
-            <li><a href="#history">History</a></li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
     </div>
-
-    <div class="container">
-        <div class="panel panel-default">
-
-            <div class="panel-heading"><h2>Hazard Calculator</h2></div>
-
-            <form action="" method="POST" >
-            {{ management_form }}
-            {% csrf_token %}
-
-            <table class="table table-condensed" id="formula-rows" width="100%">
-                <tr>
-                    <th>CAS Number</th>
-                    <th>Weight</th>
-                    <th>Delete</th>
-                </tr>
-
-                {% for form in formset %}
-                {% if form.errors %}
-                <tr class="formula_row danger" >
-                {% else %}
-                <tr class="formula_row">
-                {% endif %}
-                    <td class="number-cell">{{ form.cas }}{{ form.cas.errors }}{{form.non_field_errors}}</td>
-                    <td class="amount-cell">{{ form.weight }}{{ form.weight.errors }}</td>
-                    <td class="deleterow" ><div class='glyphicon glyphicon-remove'></div></td>
-                </tr>
-                {% endfor %}
-            </table>
-
-            <button class='addnewrow'> New Row <span class="glyphicon glyphicon-plus"></span></button>
-
-            <input id="formula-submit-button" type="submit" value="Submit Formula" />
-            </form>
-        </div>
-
-    </div>
-</div>
-
 {% endblock %}

@@ -532,7 +532,7 @@ class HazardAccumulator():
 
 
 
-    def get_hazard_dict(self, human_readable):
+    def get_hazard_dict(self):
         
         hazard_dict = {}
         
@@ -540,16 +540,9 @@ class HazardAccumulator():
         from hazard_calculator.hazards import hazard_class_list
         for HazardClass in hazard_class_list:
 
-            if human_readable:
-                hazard_key = HazardClass.human_readable_field
-                ld50_key = getattr(HazardClass, 'human_readable_ld50', None)
+            hazard_key = HazardClass.hazard_field
+            ld50_key = getattr(HazardClass, 'ld50_field', None)
 
-
-            else:
-                hazard_key = HazardClass.hazard_field
-                ld50_key = getattr(HazardClass, 'ld50_field', None)
-
-            
             hazard_dict[hazard_key] = getattr(self, HazardClass.hazard_field)
 
             if ld50_key is not None:
@@ -559,7 +552,26 @@ class HazardAccumulator():
         return hazard_dict
 
 
-        
+    #this list is used for the hazard_calculator view
+    def get_hazard_list(self):
+
+        hazard_list = []
+
+        from hazard_calculator.hazards import hazard_class_list
+        for HazardClass in hazard_class_list:
+
+            hazard_list.append((HazardClass.human_readable_field, getattr(self, HazardClass.hazard_field)))
+
+            try:
+                rounded_ld50 = round(self.subhazard_dict[HazardClass.ld50_field], 2)
+                hazard_list.append((HazardClass.human_readable_ld50, rounded_ld50))
+            except:
+                #the hazard either has no ld50 or the ld50 is None
+                pass
+
+
+        return hazard_list
+
     def recalculate_hazards(self, formula_list):
         self.subhazard_dict = create_subhazard_dict(formula_list)
         self.calculate_ld50s()

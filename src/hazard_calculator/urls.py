@@ -1,5 +1,7 @@
 from django.conf.urls.defaults import patterns, include, url
 
+from hazard_calculator.models import GHSIngredient
+
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 # admin.autodiscover()
